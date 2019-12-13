@@ -6,6 +6,36 @@ using Emgu.CV;
 
 namespace SS_OpenCV
 {
+    class PixelOrder
+    {
+        public int[][] center;
+
+        public int[][] upperLeft;
+        public int[][] upperRight;
+        public int[][] lowerLeft;
+        public int[][] lowerRight;
+
+        public int[][] top;
+        public int[][] bottom;
+        public int[][] left;
+        public int[][] right;
+
+        public PixelOrder()
+        {
+            center = new int[][] { new int[] { -1, -1 }, new int[] { 0, -1 }, new int[] { 1, -1 }, new int[] { -1, 0 }, new int[] { 0, 0 }, new int[] { 1, 0 }, new int[] { -1, 1 }, new int[] { 0, 1 }, new int[] { 1, 1 } };
+
+            upperLeft = new int[][] { new int[] { 0, 0 }, new int[] { 0, 0 }, new int[] { 0, 0 }, new int[] { 0, 0 }, new int[] { 0, 1 }, new int[] { 0, 1 }, new int[] { 1, 0 }, new int[] { 1, 0 }, new int[] { 0, 0 } };
+            upperRight = new int[][] { new int[] { 0, 0 }, new int[] { 0, 0 }, new int[] { 0, 1 }, new int[] { 0, 1 }, new int[] { 1, 0 }, new int[] { 1, 0 }, new int[] { 1, 0 }, new int[] { 1, 0 }, new int[] { 1, 1 } };
+            lowerLeft = new int[][] { new int[] { 0, 0 }, new int[] { 0, 0 }, new int[] { 1, 0 }, new int[] { 0, 1 }, new int[] { 0, 1 }, new int[] { 0, 1 }, new int[] { 0, 1 }, new int[] { 1, 1 }, new int[] { 1, 1 } };
+            lowerRight = new int[][] { new int[] { 0, 0 }, new int[] { 1, 0 }, new int[] { 1, 0 }, new int[] { 0, 1 }, new int[] { 0, 1 }, new int[] { 1, 1 }, new int[] { 1, 1 }, new int[] { 1, 1 }, new int[] { 1, 1 } };
+
+            top = new int[][] { new int[] { -1, 0 }, new int[] { 0, 0 }, new int[] { 1, 0 }, new int[] { -1, 0 }, new int[] { 0, 0 }, new int[] { 1, 0 }, new int[] { -1, 1 }, new int[] { 0, 1 }, new int[] { 1, 1 } };
+            bottom = new int[][] { new int[] { -1, -1 }, new int[] { 0, -1 }, new int[] { 1, -1 }, new int[] { -1, 0 }, new int[] { -1, 0 }, new int[] { 0, 0 }, new int[] { 0, 0 }, new int[] { 1, 0 }, new int[] { 1, 0 } };
+            left = new int[][] { new int[] { 0, -1 }, new int[] { 0, -1 }, new int[] { 1, -1 }, new int[] { 0, 0 }, new int[] { 0, 0 }, new int[] { 0, 1 }, new int[] { 1, 0 }, new int[] { 1, 0 }, new int[] { 1, 1 } };
+            right = new int[][] { new int[] { -1, -1 }, new int[] { 0, -1 }, new int[] { 0, -1 }, new int[] { -1, 0 }, new int[] { 0, 0 }, new int[] { 0, 0 }, new int[] { -1, 1 }, new int[] { 0, 1 }, new int[] { 0, 1 } };
+        }
+    }
+
     class ImageClass
     {
 
@@ -181,6 +211,7 @@ namespace SS_OpenCV
                 }
             }
         }
+
         public static void Mean(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy)
         {
             unsafe
@@ -198,34 +229,38 @@ namespace SS_OpenCV
                 int height = img.Height;
                 int nChan = m.nChannels; // number of channels - 3
                 int padding = m.widthStep - m.nChannels * m.width; // alinhament bytes (padding)
-                int x, y;
+                int x, y, ct;
                 var meanB = 0;
                 var meanG = 0;
                 var meanR = 0;
 
-                for (y = 1; y < height - 1; y++)
+                PixelOrder order = new PixelOrder();
+                float[] filter = {1,1,1,1,1,1,1,1,1 };
+
+                for (x = 1; x < width - 1; x++)
                 {
-                    for (x = 1; x < width - 1; x++)
+                    for (y = 1; y < height - 1; y++)
                     {
+                        ct = 0;
                         meanB = 0;
                         meanG = 0;
                         meanR = 0;
-                        for (int i = -1; i < 2; i++)
+
+                        foreach (int[] coor in order.center)
                         {
-                            for (int j = -1; j < 2; j++)
-                            {
-                                meanB += (dataPtr2 + (y + j) * m.widthStep + (x + i) * nChan)[0];
-                                meanG += (dataPtr2 + (y + j) * m.widthStep + (x + i) * nChan)[1];
-                                meanR += (dataPtr2 + (y + j) * m.widthStep + (x + i) * nChan)[2];
-                            }                       
+                            meanB += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[0]);
+                            meanG += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[1]);
+                            meanR += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[2]);
+                            ct++;
                         }
+
                         (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
                         (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
                         (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
-                    }
+                    }               
                 }
 
-                var tableS = new[] { 0,0,0,0 };
+                int[][] pixOrd = new int[][] { };
                 for (int k = 0; k < 4; k++)
                 {
                     x = 0;
@@ -233,123 +268,131 @@ namespace SS_OpenCV
                     switch (k)
                     {
                         case 0:     //Upper left corner
-                            tableS = new[] { 4, 2, 2, 1 };
+                            pixOrd = order.upperLeft;
                             x = 0;
                             y = 0;
                             break;
                         case 1:     //Upper right
-                            tableS = new[] { 2, 4, 2, 1 };
-                            x = width-2;
+                            pixOrd = order.upperRight;
+                            x = width - 2;
                             y = 0;
                             break;
                         case 2:     //Lower left
-                            tableS = new[] { 2, 1, 4, 2 };
+                            pixOrd = order.lowerLeft;
                             x = 0;
-                            y = height-2;
+                            y = height - 2;
                             break;
                         case 3:     //Lower right
-                            tableS = new[] { 1, 2, 2, 4 };
-                            x = width-2;
-                            y = height-2;
+                            pixOrd = order.lowerRight;
+                            x = width - 2;
+                            y = height - 2;
                             break;
                         default:
                             break;
                     }
 
+                    ct = 0;
                     meanB = 0;
                     meanG = 0;
                     meanR = 0;
-                    for (int i = 0; i < 2; i++)
+
+                    foreach (int[] coor in pixOrd)
                     {
-                        for (int j = 0; j < 2; j++)
-                        {
-                            meanB += tableS[k] * (dataPtr2 + (y + j) * m.widthStep + (x + i) * nChan)[0];
-                            meanG += tableS[k] * (dataPtr2 + (y + j) * m.widthStep + (x + i) * nChan)[1];
-                            meanR += tableS[k] * (dataPtr2 + (y + j) * m.widthStep + (x + i) * nChan)[2];
-                        }
+                        meanB += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[0]);
+                        meanG += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[1]);
+                        meanR += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[2]);
+                        ct++;
                     }
+
                     (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
                     (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
                     (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
                 }
 
-                var table = new[] { (-1, 0), (-1, 0), (-1, 1), (0, 0), (0, 0), (0, 1), (1, 0), (1, 0), (1, 1) };
 
                 //first and last row, without corners
-                for (x = 1; y < width - 1; x++)
+                for (x = 1; x < width - 1; x++)
                 {
                     y = 0;      //First row
-                    table = new[] { (0, -1), (0, -1), (0, 0), (0, 0), (0, 1), (0, 1), (1, -1), (1, 0), (1, 1) }; //y first
-
+                    ct = 0;
                     meanB = 0;
                     meanG = 0;
                     meanR = 0;
-                    for (int i = 0; i < 9; i++)
+
+                    foreach (int[] coor in order.top)
                     {
-                        meanB += (dataPtr2 + (y + table[i].Item1) * m.widthStep + (x + table[i].Item2) * nChan)[0];
-                        meanG += (dataPtr2 + (y + table[i].Item1) * m.widthStep + (x + table[i].Item2) * nChan)[1];
-                        meanR += (dataPtr2 + (y + table[i].Item1) * m.widthStep + (x + table[i].Item2) * nChan)[2];
+                        meanB += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[0]);
+                        meanG += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[1]);
+                        meanR += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[2]);
+                        ct++;
                     }
+
                     (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
                     (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
                     (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
 
-                    y = height - 1;     //Last row
-                    table = new[] { (-1, 1), (-1, 0), (-1, 1), (0, -1), (0, -1), (0, 0), (0, 0), (0, 1), (0, 1) }; //y first
-
+                    y = height - 2;     //Last row
+                    ct = 0;
                     meanB = 0;
                     meanG = 0;
                     meanR = 0;
-                    for (int i = 0; i < 9; i++)
+
+                    foreach (int[] coor in order.bottom)
                     {
-                        meanB += (dataPtr2 + (y + table[i].Item1) * m.widthStep + (x + table[i].Item2) * nChan)[0];
-                        meanG += (dataPtr2 + (y + table[i].Item1) * m.widthStep + (x + table[i].Item2) * nChan)[1];
-                        meanR += (dataPtr2 + (y + table[i].Item1) * m.widthStep + (x + table[i].Item2) * nChan)[2];
+                        meanB += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[0]);
+                        meanG += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[1]);
+                        meanR += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[2]);
+                        ct++;
                     }
+
                     (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
                     (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
                     (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
                 }
 
-                //first and last collumn, without corners
+                //first and last column, without corners
                 for (y = 1; y < height - 1; y++)
                 {
-                    x = 0;      //first collumn
-                    table = new[] { (-1, 0), (-1, 0), (-1, 1), (0, 0), (0, 0), (0, 1), (1, 0), (1, 0), (1, 1) }; //y first
-
+                    x = 0;      //First column
+                    ct = 0;
                     meanB = 0;
                     meanG = 0;
                     meanR = 0;
-                    for (int i = 0; i < 9; i++)
+
+                    foreach (int[] coor in order.left)
                     {
-                        meanB += (dataPtr2 + (y + table[i].Item1) * m.widthStep + (x + table[i].Item2) * nChan)[0];
-                        meanG += (dataPtr2 + (y + table[i].Item1) * m.widthStep + (x + table[i].Item2) * nChan)[1];
-                        meanR += (dataPtr2 + (y + table[i].Item1) * m.widthStep + (x + table[i].Item2) * nChan)[2];
+                        meanB += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[0]);
+                        meanG += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[1]);
+                        meanR += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[2]);
+                        ct++;
                     }
+
                     (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
                     (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
                     (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
 
-                    x = width-1;      //last collumn
-                    table = new[] { (-1, -1), (-1, 0), (-1, 0), (0, -1), (0, 0), (0, 0), (1, -1), (1, 0), (1, 0) }; //y first
-
+                    x = width - 1;     //Last column
+                    ct = 0;
                     meanB = 0;
                     meanG = 0;
                     meanR = 0;
-                    for (int i = 0; i < 9; i++)
+
+                    foreach (int[] coor in order.right)
                     {
-                        meanB += (dataPtr2 + (y + table[i].Item1) * m.widthStep + (x + table[i].Item2) * nChan)[0];
-                        meanG += (dataPtr2 + (y + table[i].Item1) * m.widthStep + (x + table[i].Item2) * nChan)[1];
-                        meanR += (dataPtr2 + (y + table[i].Item1) * m.widthStep + (x + table[i].Item2) * nChan)[2];
+                        meanB += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[0]);
+                        meanG += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[1]);
+                        meanR += (byte)(filter[ct] * (dataPtr2 + (y + coor[1]) * m.widthStep + (x + coor[0]) * nChan)[2]);
+                        ct++;
                     }
+
                     (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
                     (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
                     (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
                 }
-
-
             }
         }
+
+
         public static void NonUniform(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy, float[,] matrix, float matrixWeight)
         {
             try
@@ -636,8 +679,8 @@ namespace SS_OpenCV
                 return histArray;
             }
         }
-
     }
 }
+
 
 
