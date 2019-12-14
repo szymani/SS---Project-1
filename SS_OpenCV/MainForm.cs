@@ -478,7 +478,7 @@ namespace SS_OpenCV
             Identify.BgrToHsv(img, imgHsv);
 
             //Drawing rectangle
-            //Identify.DrawRectangle(img, new int[]{200, 300, 400, 500});
+            Identify.DrawRectangle(img, new int[]{200, 300, 400, 500});
 
             ImageViewer.Image = imgHsv.Bitmap;
             //ImageViewer.Image = img.Bitmap;
