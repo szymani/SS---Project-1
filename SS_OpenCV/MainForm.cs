@@ -15,6 +15,7 @@ namespace SS_OpenCV
         
         Image<Bgr, Byte> img = null; // working image
         Image<Bgr, Byte> imgUndo = null; // undo backup image - UNDO
+        Image<Hsv, Byte> imgHsv = null; // undo backup image - UNDO
 
         string title_bak = "";
 
@@ -34,6 +35,7 @@ namespace SS_OpenCV
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 img = new Image<Bgr, byte>(openFileDialog1.FileName);
+                imgHsv = new Image<Hsv, byte>(openFileDialog1.FileName);
                 Text = title_bak + " [" +
                         openFileDialog1.FileName.Substring(openFileDialog1.FileName.LastIndexOf("\\") + 1) +
                         "]";
@@ -473,12 +475,12 @@ namespace SS_OpenCV
             Cursor = Cursors.WaitCursor; // clock cursor 
 
             //HSV image inside imgUndo
-            Identify.BgrToHsv(img, imgUndo);
+            Identify.BgrToHsv(img, imgHsv);
 
             //Drawing rectangle
-            Identify.DrawRectangle(img, new int[]{200, 300, 400, 500});
+            //Identify.DrawRectangle(img, new int[]{200, 300, 400, 500});
 
-            ImageViewer.Image = imgUndo.Bitmap;
+            ImageViewer.Image = imgHsv.Bitmap;
             //ImageViewer.Image = img.Bitmap;
 
             ImageViewer.Refresh(); // refresh image on the screen

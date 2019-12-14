@@ -9,7 +9,7 @@ namespace SS_OpenCV
 {
     class Identify
     {
-        public static void BgrToHsv(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy)
+        public static void BgrToHsv(Image<Bgr, byte> img, Image<Hsv, byte> imgCopy)
         {
             unsafe
             {
@@ -64,10 +64,11 @@ namespace SS_OpenCV
 
                         //Value
                         val = cmax;
-
+                        
                         (dataPtr2 + y * m.widthStep + x * nChan)[0] = (byte)(Math.Round(val*255));
                         (dataPtr2 + y * m.widthStep + x * nChan)[1] = (byte)(Math.Round(sat*255));
                         (dataPtr2 + y * m.widthStep + x * nChan)[2] = (byte)(Math.Round(hue*255/360));
+                        
                     }
                 }
             }
@@ -112,6 +113,50 @@ namespace SS_OpenCV
                             (dataPtr + y * m.widthStep + x * nChan)[0] = 0;
                             (dataPtr + y * m.widthStep + x * nChan)[1] = 0;
                             (dataPtr + y * m.widthStep + x * nChan)[2] = 255;
+                        }
+                    }
+                }
+            }
+        }
+
+
+        public static void Scale(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy, float scaleFactor)
+        {
+            unsafe
+            {
+                int x, y;
+                MIplImage m = img.MIplImage;
+                byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
+
+                MIplImage m2 = imgCopy.MIplImage;
+                byte* dataPtr2 = (byte*)m2.imageData.ToPointer(); // Pointer to the image
+
+                int width = img.Width;
+                int height = img.Height;
+                int nChan = m.nChannels; // number of channels - 3
+                int padding = m.widthStep - m.nChannels * m.width;
+                // acesso directo : mais lento 
+                for (y = 0; y < height; y++)
+                {
+                    for (x = 0; x < width; x++)
+                    {
+                        // get pixel address
+                        //blue = (byte)(dataPtr + y * widthstep + x * nC)[0];
+                        var x0 = (int)Math.Round(x / scaleFactor);
+                        var y0 = (int)Math.Round(y / scaleFactor);
+
+                        if (x0 >= 0 && y0 >= 0 && x0 < width && y0 < height)
+                        {
+                            // get pixel address
+                            (dataPtr + y * m.widthStep + x * nChan)[0] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[0];
+                            (dataPtr + y * m.widthStep + x * nChan)[1] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[1];
+                            (dataPtr + y * m.widthStep + x * nChan)[2] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[2];
+                        }
+                        else
+                        {
+                            (dataPtr + y * m.widthStep + x * nChan)[0] = 0;
+                            (dataPtr + y * m.widthStep + x * nChan)[1] = 0;
+                            (dataPtr + y * m.widthStep + x * nChan)[2] = 0;
                         }
                     }
                 }
