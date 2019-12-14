@@ -1011,9 +1011,6 @@ namespace SS_OpenCV
                 byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
                 byte blue, green, red, gray;
 
-<<<<<<< HEAD
-        
-=======
                 int width = img.Width;
                 int height = img.Height;
                 int nChan = m.nChannels; // number of channels - 3
@@ -1031,7 +1028,6 @@ namespace SS_OpenCV
                             blue = dataPtr[0];
                             green = dataPtr[1];
                             red = dataPtr[2];
->>>>>>> 8c66b2e10ff4869d468cf3aa60a96a7d21efcc3c
 
                             // convert to gray
                             gray = (byte)Math.Round(((int)blue + green + red) / 3.0);
