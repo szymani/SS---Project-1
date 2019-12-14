@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Emgu.CV.Structure;
 using Emgu.CV;
+using System.Linq;
 
 namespace SS_OpenCV
 {
@@ -147,7 +148,7 @@ namespace SS_OpenCV
                             var x0 = x - dx;
                             var y0 = y - dy;
 
-                            if(x0>=0&& y0>=0 &&x0<width && y0<height)
+                            if (x0 >= 0 && y0 >= 0 && x0 < width && y0 < height)
                             {
                                 (dataPtr + y * m.widthStep + x * nChan)[0] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[0];
                                 (dataPtr + y * m.widthStep + x * nChan)[1] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[1];
@@ -192,9 +193,9 @@ namespace SS_OpenCV
                         for (x = 0; x < width; x++)
                         {
                             var x0 = (byte)Math.Round((x - width / 2) * Math.Cos(angle) - (height / 2 - y) * Math.Sin(angle) + width / 2);
-                            var y0 = (byte)Math.Round(height /2 - (x - width / 2) * Math.Sin(angle) - (height / 2 - y) * Math.Cos(angle));
+                            var y0 = (byte)Math.Round(height / 2 - (x - width / 2) * Math.Sin(angle) - (height / 2 - y) * Math.Cos(angle));
 
-                            if (Math.Abs(x0-x)<=height && Math.Abs(y0 - y) <= height)
+                            if (Math.Abs(x0 - x) <= height && Math.Abs(y0 - y) <= height)
                             {
                                 (dataPtr + y * m.widthStep + x * nChan)[0] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[0];
                                 (dataPtr + y * m.widthStep + x * nChan)[1] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[1];
@@ -213,6 +214,12 @@ namespace SS_OpenCV
         }
 
         public static void Mean(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy)
+        {
+            float[] filter = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+            genericFilter(img, imgCopy, filter);
+        }
+
+        public static void genericFilter(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy, float[] filter, float  weight  = 9)
         {
             unsafe
             {
@@ -235,7 +242,6 @@ namespace SS_OpenCV
                 var meanR = 0;
 
                 PixelOrder order = new PixelOrder();
-                float[] filter = {1,1,1,1,1,1,1,1,1 };
 
                 for (x = 1; x < width - 1; x++)
                 {
@@ -254,10 +260,10 @@ namespace SS_OpenCV
                             ct++;
                         }
 
-                        (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
-                        (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
-                        (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
-                    }               
+                        (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / weight);
+                        (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / weight);
+                        (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / weight);
+                    }
                 }
 
                 int[][] pixOrd = new int[][] { };
@@ -304,9 +310,9 @@ namespace SS_OpenCV
                         ct++;
                     }
 
-                    (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
-                    (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
-                    (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
+                    (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / weight);
+                    (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / weight);
+                    (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / weight);
                 }
 
 
@@ -327,11 +333,11 @@ namespace SS_OpenCV
                         ct++;
                     }
 
-                    (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
-                    (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
-                    (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
+                    (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / weight);
+                    (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / weight);
+                    (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / weight);
 
-                    y = height - 2;     //Last row
+                    y = height - 1;     //Last row
                     ct = 0;
                     meanB = 0;
                     meanG = 0;
@@ -345,9 +351,9 @@ namespace SS_OpenCV
                         ct++;
                     }
 
-                    (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
-                    (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
-                    (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
+                    (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / weight);
+                    (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / weight);
+                    (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / weight);
                 }
 
                 //first and last column, without corners
@@ -367,9 +373,9 @@ namespace SS_OpenCV
                         ct++;
                     }
 
-                    (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
-                    (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
-                    (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
+                    (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / weight);
+                    (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / weight);
+                    (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / weight);
 
                     x = width - 1;     //Last column
                     ct = 0;
@@ -385,67 +391,73 @@ namespace SS_OpenCV
                         ct++;
                     }
 
-                    (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
-                    (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
-                    (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
+                    (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / weight);
+                    (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / weight);
+                    (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / weight);
                 }
             }
         }
-
 
         public static void NonUniform(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy, float[,] matrix, float matrixWeight)
         {
+            float[] filter = matrix.Cast<float>().ToArray();
+
+            genericFilter(img, imgCopy, filter, matrixWeight);
             try
             {
-                unsafe
-                {
-                    // direct access to the image memory(sequencial
-                    // direcion top left -> bottom right
+                //unsafe
+                //{
+                //    // direct access to the image memory(sequencial
+                //    // direcion top left -> bottom right
 
-                    MIplImage m = img.MIplImage;
-                    byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
+                //    MIplImage m = img.MIplImage;
+                //    byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
 
-                    MIplImage m2 = imgCopy.MIplImage;
-                    byte* dataPtr2 = (byte*)m2.imageData.ToPointer(); // Pointer to the image
+                //    MIplImage m2 = imgCopy.MIplImage;
+                //    byte* dataPtr2 = (byte*)m2.imageData.ToPointer(); // Pointer to the image
 
-                    int width = img.Width;
-                    int height = img.Height;
-                    int nChan = m.nChannels; // number of channels - 3
-                    int padding = m.widthStep - m.nChannels * m.width; // alinhament bytes (padding)
-                    int x, y;
-                    var meanB = 0;
-                    var meanG = 0;
-                    var meanR = 0;
+                //    int width = img.Width;
+                //    int height = img.Height;
+                //    int nChan = m.nChannels; // number of channels - 3
+                //    int padding = m.widthStep - m.nChannels * m.width; // alinhament bytes (padding)
+                //    int x, y;
+                //    var meanB = 0;
+                //    var meanG = 0;
+                //    var meanR = 0;
 
-                    for (y = 1; y < height - 1; y++)
-                    {
-                        for (x = 1; x < width - 1; x++)
-                        {
-                            meanB = 0;
-                            meanG = 0;
-                            meanR = 0;
-                            for (int i = -1; i < 2; i++)
-                            {
-                                for (int j = -1; j < 2; j++)
-                                {
-                                    meanB += (byte)(int)Math.Round(matrix[i, j] * matrixWeight * (dataPtr2 + (y + j) * m.widthStep + (x + i) * nChan)[0]);
-                                    meanG += (byte)(int)Math.Round(matrix[i, j] * matrixWeight * (dataPtr2 + (y + j) * m.widthStep + (x + i) * nChan)[1]);
-                                    meanR += (byte)(int)Math.Round(matrix[i, j] * matrixWeight * (dataPtr2 + (y + j) * m.widthStep + (x + i) * nChan)[2]);
-                                }
-                            }
-                            (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
-                            (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
-                            (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
-                        }
-                    }
+                //    for (y = 1; y < height - 1; y++)
+                //    {
+                //        for (x = 1; x < width - 1; x++)
+                //        {
+                //            meanB = 0;
+                //            meanG = 0;
+                //            meanR = 0;
+                //            for (int i = -1; i < 2; i++)
+                //            {
+                //                for (int j = -1; j < 2; j++)
+                //                {
+                //                    meanB += (byte)(int)Math.Round(matrix[i, j] * matrixWeight * (dataPtr2 + (y + j) * m.widthStep + (x + i) * nChan)[0]);
+                //                    meanG += (byte)(int)Math.Round(matrix[i, j] * matrixWeight * (dataPtr2 + (y + j) * m.widthStep + (x + i) * nChan)[1]);
+                //                    meanR += (byte)(int)Math.Round(matrix[i, j] * matrixWeight * (dataPtr2 + (y + j) * m.widthStep + (x + i) * nChan)[2]);
+                //                }
+                //            }
+                //            (dataPtr + y * m.widthStep + x * nChan)[0] = (byte)(int)Math.Round(meanB / 9.0);
+                //            (dataPtr + y * m.widthStep + x * nChan)[1] = (byte)(int)Math.Round(meanG / 9.0);
+                //            (dataPtr + y * m.widthStep + x * nChan)[2] = (byte)(int)Math.Round(meanR / 9.0);
+                //        }
+                //    }
 
-                }
+                //}
             }
             catch { }
-        
+
         }
        public static void Sobel(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy)
        {
+
+
+           // genericFilter(img, imgCopy, new float[] { });
+
             unsafe
             {
                 // direct access to the image memory(sequencial
@@ -516,6 +528,10 @@ namespace SS_OpenCV
         }
         public static void Diferentiation(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy)
         {
+
+
+           // genericFilter(img, imgCopy, new float[] { });
+
             unsafe
             {
                 // direct access to the image memory(sequencial
