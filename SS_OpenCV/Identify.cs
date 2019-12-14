@@ -41,14 +41,17 @@ namespace SS_OpenCV
                         double r = red/255.0;
                         double g = green/255.0;
                         double b = blue/255.0;
-                        double sat, val;
+                        double hue, sat, val;
 
                         double cmax = Math.Max(r,b);
                         cmax = Math.Max(cmax,g);
                         double cmin = Math.Min(r, b);
                         cmin = Math.Min(cmin, g);
                         double delta = cmax - cmin;
-                        
+
+                        //Hue
+                        hue = hsvPixel.Hue;
+
                         //Saturation
                         if (cmax == 0)
                         {
@@ -64,7 +67,7 @@ namespace SS_OpenCV
 
                         (dataPtr2 + y * m.widthStep + x * nChan)[0] = (byte)(Math.Round(val*255));
                         (dataPtr2 + y * m.widthStep + x * nChan)[1] = (byte)(Math.Round(sat*255));
-                        (dataPtr2 + y * m.widthStep + x * nChan)[2] = (byte)(Math.Round(hsvPixel.Hue*255/360));
+                        (dataPtr2 + y * m.widthStep + x * nChan)[2] = (byte)(Math.Round(hue*255/360));
                     }
                 }
             }
@@ -114,10 +117,6 @@ namespace SS_OpenCV
                 }
             }
         }
-
-
-
-
 
     }
 }

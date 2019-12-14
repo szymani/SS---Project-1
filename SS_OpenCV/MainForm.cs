@@ -478,8 +478,8 @@ namespace SS_OpenCV
             //Drawing rectangle
             Identify.DrawRectangle(img, new int[]{200, 300, 400, 500});
 
-            //ImageViewer.Image = imgUndo.Bitmap;
-            ImageViewer.Image = img.Bitmap;
+            ImageViewer.Image = imgUndo.Bitmap;
+            //ImageViewer.Image = img.Bitmap;
 
             ImageViewer.Refresh(); // refresh image on the screen
             Cursor = Cursors.Default; // normal cursor
