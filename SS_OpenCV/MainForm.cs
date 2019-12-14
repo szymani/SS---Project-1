@@ -4,11 +4,14 @@ using Emgu.CV;
 using Emgu.CV.Structure;
 
 namespace SS_OpenCV
-{ 
+{
     public partial class MainForm : Form
     {
         Image<Bgr, Byte> img = null; // working image
         Image<Bgr, Byte> imgUndo = null; // undo backup image - UNDO
+        Image<Hsv, Byte> imgHsv = null; // for identify identify
+        Image<Hsv, Byte> imgHsvUndo = null; // for identify identify
+
         string title_bak = "";
 
         public MainForm()
@@ -31,6 +34,7 @@ namespace SS_OpenCV
                         openFileDialog1.FileName.Substring(openFileDialog1.FileName.LastIndexOf("\\") + 1) +
                         "]";
                 imgUndo = img.Copy();
+
                 ImageViewer.Image = img.Bitmap;
                 ImageViewer.Refresh();
             }
@@ -67,7 +71,7 @@ namespace SS_OpenCV
         private void undoToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (imgUndo == null) // verify if the image is already opened
-                return; 
+                return;
             Cursor = Cursors.WaitCursor;
             img = imgUndo.Copy();
 
@@ -180,7 +184,7 @@ namespace SS_OpenCV
             form2.ShowDialog();
             int dy = Convert.ToInt32(form2.ValueTextBox.Text);
 
-            ImageClass.Translation(img,imgUndo, dx,dy);
+            ImageClass.Translation(img, imgUndo, dx, dy);
 
             ImageViewer.Image = img.Bitmap;
             ImageViewer.Refresh(); // refresh image on the screen
@@ -239,7 +243,7 @@ namespace SS_OpenCV
             Form1 form = new Form1();
 
             form.ShowDialog();
-            
+
             ImageClass.NonUniform(img, imgUndo, form.matrix, form.weight);
 
             ImageViewer.Image = img.Bitmap;
@@ -457,9 +461,21 @@ namespace SS_OpenCV
             Cursor = Cursors.Default; // normal cursor
 
         }
+
+        private void Identify1ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (img == null) // verify if the image is already opened
+                return;
+            Cursor = Cursors.WaitCursor; // clock cursor 
+
+            //copy Undo Image
+
+            Identify.SignIdentify(img, imgUndo);
+
+            ImageViewer.Image = img.Bitmap;
+            ImageViewer.Refresh(); // refresh image on the screen
+            Cursor = Cursors.Default; // normal cursor
+        }
+
     }
-
-
-
-
 }
