@@ -7,10 +7,14 @@ namespace SS_OpenCV
 {
     public partial class MainForm : Form
     {
+        //bool haveOpenCL = CvInvoke.HaveOpenCL;
+
+        //bool haveOpenClGpu = CvInvoke.HaveOpenCLCompatibleGpuDevice;
+
+        //CvInvoke.UseOpenCL = true;
+        
         Image<Bgr, Byte> img = null; // working image
         Image<Bgr, Byte> imgUndo = null; // undo backup image - UNDO
-        Image<Hsv, Byte> imgHsv = null; // for identify identify
-        Image<Hsv, Byte> imgHsvUndo = null; // for identify identify
 
         string title_bak = "";
 
@@ -468,11 +472,15 @@ namespace SS_OpenCV
                 return;
             Cursor = Cursors.WaitCursor; // clock cursor 
 
-            //copy Undo Image
+            //HSV image inside imgUndo
+            Identify.BgrToHsv(img, imgUndo);
 
-            Identify.SignIdentify(img, imgUndo);
+            //Drawing rectangle
+            Identify.DrawRectangle(img, new int[]{200, 300, 400, 500});
 
-            ImageViewer.Image = img.Bitmap;
+            ImageViewer.Image = imgUndo.Bitmap;
+            //ImageViewer.Image = img.Bitmap;
+
             ImageViewer.Refresh(); // refresh image on the screen
             Cursor = Cursors.Default; // normal cursor
         }
