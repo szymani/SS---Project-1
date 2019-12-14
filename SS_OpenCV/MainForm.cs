@@ -314,6 +314,149 @@ namespace SS_OpenCV
 
             Cursor = Cursors.Default; // normal cursor 
         }
+
+        private void ScaleToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (img == null) // verify if the image is already opened
+                return;
+            Cursor = Cursors.WaitCursor; // clock cursor 
+
+            //input boxes
+            InputBox form = new InputBox("scale?");
+            form.ShowDialog();
+            float scaleFactor = Convert.ToInt32(form.ValueTextBox.Text);
+
+            //copy Undo Image
+            imgUndo = img.Copy();
+
+            ImageClass.Scale(img, imgUndo, scaleFactor);
+
+            ImageViewer.Image = img.Bitmap;
+            ImageViewer.Refresh(); // refresh image on the screen
+
+            Cursor = Cursors.Default; // normal cursor
+        }
+
+        private void ScalePointToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (img == null) // verify if the image is already opened
+                return;
+            Cursor = Cursors.WaitCursor; // clock cursor 
+
+            //input boxes
+            InputBox form = new InputBox("scale?");
+            form.ShowDialog();
+            float scaleFactor = Convert.ToInt32(form.ValueTextBox.Text);
+
+            InputBox formx = new InputBox("x?");
+            formx.ShowDialog();
+            int centerX = Convert.ToInt32(formx.ValueTextBox.Text);
+
+            InputBox formy = new InputBox("y?");
+            formy.ShowDialog();
+            int centerY = Convert.ToInt32(formy.ValueTextBox.Text);
+
+            //copy Undo Image
+            imgUndo = img.Copy();
+
+            ImageClass.Scale_point_xy(img, imgUndo, scaleFactor, centerX, centerY);
+
+            ImageViewer.Image = img.Bitmap;
+            ImageViewer.Refresh(); // refresh image on the screen
+
+            Cursor = Cursors.Default; // normal cursor
+        }
+
+        private void BrightnessToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (img == null) // verify if the image is already opened
+                return;
+            Cursor = Cursors.WaitCursor; // clock cursor 
+
+            //input boxes
+            InputBox form = new InputBox("brightness?");
+            form.ShowDialog();
+            int brightness = Convert.ToInt32(form.ValueTextBox.Text);
+
+            InputBox formc = new InputBox("contrast?");
+            formc.ShowDialog();
+            float contrast = Convert.ToInt32(formc.ValueTextBox.Text);
+
+
+            //copy Undo Image
+            imgUndo = img.Copy();
+
+
+
+            ImageClass.BrightContrast(img, brightness, contrast);
+
+            ImageViewer.Image = img.Bitmap;
+            ImageViewer.Refresh(); // refresh image on the screen
+
+            Cursor = Cursors.Default; // normal cursor
+
+        }
+
+        private void RedChannelToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+            if (img == null) // verify if the image is already opened
+                return;
+            Cursor = Cursors.WaitCursor; // clock cursor 
+
+
+            //copy Undo Image
+            imgUndo = img.Copy();
+
+
+
+            ImageClass.RedChannel(img);
+
+            ImageViewer.Image = img.Bitmap;
+            ImageViewer.Refresh(); // refresh image on the screen
+
+            Cursor = Cursors.Default; // normal cursor
+
+
+        }
+
+        private void BlackAndWhiteToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (img == null) // verify if the image is already opened
+                return;
+            Cursor = Cursors.WaitCursor; // clock cursor 
+
+            //input boxes
+            InputBox form = new InputBox("threshold?");
+            form.ShowDialog();
+            int threshold = Convert.ToInt32(form.ValueTextBox.Text);
+
+            //copy Undo Image
+            imgUndo = img.Copy();
+
+            ImageClass.ConvertToBW(img, threshold);
+
+            ImageViewer.Image = img.Bitmap;
+            ImageViewer.Refresh(); // refresh image on the screen
+
+            Cursor = Cursors.Default; // normal cursor
+        }
+
+        private void BlackAndWhiteOtsuToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (img == null) // verify if the image is already opened
+                return;
+            Cursor = Cursors.WaitCursor; // clock cursor 
+
+
+            ImageClass.ConvertToBW_Otsu(img);
+
+            ImageViewer.Image = img.Bitmap;
+            ImageViewer.Refresh(); // refresh image on the screen
+
+            Cursor = Cursors.Default; // normal cursor
+
+        }
     }
 
 

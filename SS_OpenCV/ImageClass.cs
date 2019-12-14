@@ -161,10 +161,11 @@ namespace SS_OpenCV
                     {
                         for (x = 0; x < width; x++)
                         {
-                            var x0 = (byte)Math.Round((x - width / 2) * Math.Cos(angle) - (height / 2 - y) * Math.Sin(angle) + width / 2);
-                            var y0 = (byte)Math.Round(height /2 - (x - width / 2) * Math.Sin(angle) - (height / 2 - y) * Math.Cos(angle));
+                            var x0 = (int)Math.Round((x - width / 2) * Math.Cos(angle) - (height / 2 - y) * Math.Sin(angle) + width / 2);
+                            var y0 = (int)Math.Round(height /2 - (x - width / 2) * Math.Sin(angle) - (height / 2 - y) * Math.Cos(angle));
 
-                            if (Math.Abs(x0-x)<=height && Math.Abs(y0 - y) <= height)
+                            //if (Math.Abs(x0-x)<=height && Math.Abs(y0 - y) <= height)
+                            if (x0 >= 0 && y0 >= 0 && x0 < width && y0 < height)
                             {
                                 (dataPtr + y * m.widthStep + x * nChan)[0] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[0];
                                 (dataPtr + y * m.widthStep + x * nChan)[1] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[1];
@@ -276,7 +277,7 @@ namespace SS_OpenCV
                 var table = new[] { (-1, 0), (-1, 0), (-1, 1), (0, 0), (0, 0), (0, 1), (1, 0), (1, 0), (1, 1) };
 
                 //first and last row, without corners
-                for (x = 1; y < width - 1; x++)
+                for (x = 1; x < width - 1; x++)
                 {
                     y = 0;      //First row
                     table = new[] { (0, -1), (0, -1), (0, 0), (0, 0), (0, 1), (0, 1), (1, -1), (1, 0), (1, 1) }; //y first
@@ -636,6 +637,300 @@ namespace SS_OpenCV
                 return histArray;
             }
         }
+
+
+        public static void Scale(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy, float scaleFactor)
+        {
+            unsafe
+            {
+                int x, y;
+                MIplImage m = img.MIplImage;
+                byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
+
+                MIplImage m2 = imgCopy.MIplImage;
+                byte* dataPtr2 = (byte*)m2.imageData.ToPointer(); // Pointer to the image
+
+                int width = img.Width;
+                int height = img.Height;
+                int nChan = m.nChannels; // number of channels - 3
+                int padding = m.widthStep - m.nChannels * m.width;
+                // acesso directo : mais lento 
+                for (y = 0; y < height; y++)
+                {
+                    for (x = 0; x < width; x++)
+                    {
+                        // get pixel address
+                        //blue = (byte)(dataPtr + y * widthstep + x * nC)[0];
+                        var x0 = (int)Math.Round(x / scaleFactor);
+                        var y0 = (int)Math.Round(y / scaleFactor);
+
+                        if (x0 >= 0 && y0 >= 0 && x0 < width && y0 < height)
+                        {
+                            // get pixel address
+                            (dataPtr + y * m.widthStep + x * nChan)[0] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[0];
+                            (dataPtr + y * m.widthStep + x * nChan)[1] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[1];
+                            (dataPtr + y * m.widthStep + x * nChan)[2] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[2];
+                        }
+                        else
+                        {
+                            (dataPtr + y * m.widthStep + x * nChan)[0] = 0;
+                            (dataPtr + y * m.widthStep + x * nChan)[1] = 0;
+                            (dataPtr + y * m.widthStep + x * nChan)[2] = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void Scale_point_xy(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy, float scaleFactor, int centerX, int centerY)
+        {
+            unsafe
+            {
+                int x, y;
+                MIplImage m = img.MIplImage;
+                byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
+
+                MIplImage m2 = imgCopy.MIplImage;
+                byte* dataPtr2 = (byte*)m2.imageData.ToPointer(); // Pointer to the image
+
+                int width = img.Width;
+                int height = img.Height;
+                int nChan = m.nChannels; // number of channels - 3
+                int padding = m.widthStep - m.nChannels * m.width;
+                // acesso directo : mais lento 
+                for (y = 0; y < height; y++)
+                {
+                    for (x = 0; x < width; x++)
+                    {
+
+                        //var x0 = (int)Math.Round((x+width/2.0)/scaleFactor);
+                        //var y0 = (int)Math.Round((y+height/2.0)/scaleFactor);
+                        var x0 = (int)Math.Round((x + centerX / scaleFactor) / scaleFactor);
+                        var y0 = (int)Math.Round((y + centerY / scaleFactor) / scaleFactor);
+
+
+                        if (x0 >= 0 && y0 >= 0 && x0 <= width && y0 <= height)
+                        {
+                            // get pixel address
+                            (dataPtr + y * m.widthStep + x * nChan)[0] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[0];
+                            (dataPtr + y * m.widthStep + x * nChan)[1] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[1];
+                            (dataPtr + y * m.widthStep + x * nChan)[2] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[2];
+                        }
+                        else
+                        {
+                            (dataPtr + y * m.widthStep + x * nChan)[0] = 0;
+                            (dataPtr + y * m.widthStep + x * nChan)[1] = 0;
+                            (dataPtr + y * m.widthStep + x * nChan)[2] = 0;
+                        }
+                    }
+                }
+            }
+        }
+
+
+        public static void ConvertToBW(Emgu.CV.Image<Bgr, byte> img, int threshold)
+        {
+            unsafe
+            {
+                int x, y;
+                MIplImage m = img.MIplImage;
+                byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
+
+                int width = img.Width;
+                int height = img.Height;
+                int nChan = m.nChannels; // number of channels - 3
+                int padding = m.widthStep - m.nChannels * m.width;
+
+                //MAIN MEAN
+                for (y = 0; y < height; y++)
+                {
+                    for (x = 0; x < width; x++)
+                    {
+
+                        int blue = (dataPtr + y * m.widthStep + x * nChan)[0];
+                        int green = (dataPtr + y * m.widthStep + x * nChan)[1];
+                        int red = (dataPtr + y * m.widthStep + x * nChan)[2];
+                        int ave = (byte)Math.Round((blue + green + red) / 3.0);
+
+                        if (ave <= threshold)
+                        {
+                            for (int i = 0; i < 3; i++)
+                                (dataPtr + y * m.widthStep + x * nChan)[i] = 0;
+                        }
+                        else
+                        {
+                            for (int i = 0; i < 3; i++)
+                                (dataPtr + y * m.widthStep + x * nChan)[i] = 255;
+                        }
+
+                    }
+
+                }
+
+            }
+        }
+
+        public static void ConvertToBW_Otsu(Emgu.CV.Image<Bgr, byte> img)
+        {
+            unsafe
+            {
+                int x, y;
+                MIplImage m = img.MIplImage;
+                byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
+
+                int width = img.Width;
+                int height = img.Height;
+                int nChan = m.nChannels; // number of channels - 3
+                int padding = m.widthStep - m.nChannels * m.width;
+                int[] histogram = new int[256];
+                int threshold = 0;
+
+                double weight_bg = 0.0;
+                double mean_bg = 0.0;
+                double variance_bg = 0.0;
+                double weight_fg = 0.0;
+                double mean_fg = 0.0;
+                double variance_fg = 0.0;
+                int hist_elements = 0;
+                double class_variance = double.MaxValue;
+                for (y = 0; y < height; y++)
+                {
+                    for (x = 0; x < width; x++)
+                    {
+                        int blue = (dataPtr + y * m.widthStep + x * nChan)[0];
+                        int green = (dataPtr + y * m.widthStep + x * nChan)[1];
+                        int red = (dataPtr + y * m.widthStep + x * nChan)[2];
+                        int ave = (byte)Math.Round((blue + green + red) / 3.0);
+                        histogram[ave] += 1;
+
+                    }
+                }
+
+                for (int current_threshold = 1; current_threshold < 255; current_threshold++)
+                {
+                    hist_elements = 0;
+                    weight_bg = 0.0;
+                    mean_bg = 0.0;
+                    variance_bg = 0.0;
+                    weight_fg = 0.0;
+                    mean_fg = 0.0;
+                    variance_fg = 0.0;
+                    double current_class_variance = 0.0;
+
+                    //background
+                    for (int i = 0; i < current_threshold; i++)
+                    {
+                        weight_bg += histogram[i];
+                        mean_bg += i * histogram[i];
+                        hist_elements += histogram[i];
+                    }
+                    weight_bg /= width * height;
+                    mean_bg /= hist_elements;
+                    for (int i = 0; i < current_threshold; i++)
+                    {
+                        variance_bg += Math.Pow((i - mean_bg), 2) * histogram[i];
+                    }
+                    variance_bg /= hist_elements;
+                    hist_elements = 0;
+
+                    //foreground
+                    for (int i = current_threshold + 1; i < 256; i++)
+                    {
+                        weight_fg += histogram[i];
+                        mean_fg += i * histogram[i];
+                        hist_elements += histogram[i];
+                    }
+                    weight_fg /= width * height;
+                    mean_fg /= hist_elements;
+                    for (int i = current_threshold + 1; i < 256; i++)
+                    {
+                        variance_fg += Math.Pow((i - mean_fg), 2) * histogram[i];
+                    }
+                    variance_fg /= hist_elements;
+
+                    //result and compare
+                    current_class_variance = weight_bg * variance_bg + weight_fg * variance_fg;
+                    if (current_class_variance < class_variance)
+                    {
+                        class_variance = current_class_variance;
+                        threshold = current_threshold;
+                    }
+                }
+
+                ConvertToBW(img, threshold);
+            }
+        }
+
+
+
+        public static void RedChannel(Image<Bgr, byte> img)
+        {
+            unsafe
+            {
+                int x, y;
+                MIplImage m = img.MIplImage;
+                byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
+
+                int width = img.Width;
+                int height = img.Height;
+                int nChan = m.nChannels; // number of channels - 3
+                int padding = m.widthStep - m.nChannels * m.width;
+                // acesso directo : mais lento 
+                for (y = 0; y < height; y++)
+                {
+                    for (x = 0; x < width; x++)
+                    {
+                        // store in the image
+                        dataPtr[0] = (dataPtr[2]);
+                        dataPtr[1] = (dataPtr[2]);
+
+
+                        // advance the pointer to the next pixel
+                        dataPtr += nChan;
+                    }
+
+                    //at the end of the line advance the pointer by the aligment bytes (padding)
+                    dataPtr += padding;
+                }
+
+            }
+        }
+
+        public static void BrightContrast(Image<Bgr, byte> img, int bright, double contrast)
+        {
+            unsafe
+            {
+                int x, y;
+                MIplImage m = img.MIplImage;
+                byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
+
+                int width = img.Width;
+                int height = img.Height;
+                int nChan = m.nChannels; // number of channels - 3
+                int padding = m.widthStep - m.nChannels * m.width;
+                // acesso directo : mais lento 
+                for (y = 0; y < height; y++)
+                {
+                    for (x = 0; x < width; x++)
+                    {
+                        // store in the image
+                        dataPtr[0] = (byte)(Math.Round(contrast * dataPtr[0] + bright));
+                        dataPtr[1] = (byte)(Math.Round(contrast * dataPtr[1] + bright));
+                        dataPtr[2] = (byte)(Math.Round(contrast * dataPtr[2] + bright));
+
+                        // advance the pointer to the next pixel
+                        dataPtr += nChan;
+                    }
+
+                    //at the end of the line advance the pointer by the aligment bytes (padding)
+                    dataPtr += padding;
+                }
+            }
+        }
+
+
+
+
 
     }
 }
