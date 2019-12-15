@@ -515,6 +515,17 @@ namespace SS_OpenCV
                     }
                 }
 
+                int ind = 0;
+                List<byte[]> colors = new List<byte[]>{
+                    new byte[]{135,20,20},
+                    new byte[]{200,20,20},
+                    new byte[]{35,200,20},
+                    new byte[]{35,20,200},
+                    new byte[]{0,100,200},
+                    new byte[]{50,20,100}
+                };
+
+
                 //------------Pixel Anotation Check--------------------
                 MIplImage m2 = img.MIplImage;
                 byte* dataPtr2 = (byte*)m2.imageData.ToPointer(); // Pointer to the image
@@ -551,6 +562,7 @@ namespace SS_OpenCV
                             (dataPtr2 + y * m2.widthStep + x * nChan2)[1] = 255;
                             (dataPtr2 + y * m2.widthStep + x * nChan2)[2] = 0;
                             changedPixelsBlack += 1;
+                            ind += 1;
                         }
                     }
                 }

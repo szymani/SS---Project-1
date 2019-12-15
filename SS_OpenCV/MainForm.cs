@@ -17,6 +17,7 @@ namespace SS_OpenCV
         Image<Bgr, Byte> img = null; // working image
         Image<Bgr, Byte> imgUndo = null; // undo backup image - UNDO
         Image<Bgr, Byte> imgOriginal = null; //never changed
+        Image<Bgr, Byte> imgOtsu = null;
         Image<Hsv, Byte> imgHsv = null; // hsv image
         Image<Bgr, Byte> digit0 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\0.png");
         Image<Bgr, Byte> digit1 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\1.png");
@@ -501,6 +502,8 @@ namespace SS_OpenCV
             //copy Undo Image
             imgUndo = img.Copy();
             imgOriginal = img.Copy();
+            imgOtsu = img.Copy();
+
 
             List<int> classification = new List<int>();
             //HSV image inside imgUndo, you can change imgUndo to imgHsv to get different result (also Bgr to Hsv change needed in BgrToHsv func)
