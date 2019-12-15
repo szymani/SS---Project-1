@@ -16,6 +16,7 @@ namespace SS_OpenCV
 
         Image<Bgr, Byte> img = null; // working image
         Image<Bgr, Byte> imgUndo = null; // undo backup image - UNDO
+        Image<Bgr, Byte> imgOriginal = null; //never changed
         Image<Hsv, Byte> imgHsv = null; // hsv image
         Image<Bgr, Byte> digit0 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\0.png");
         Image<Bgr, Byte> digit1 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\1.png");
@@ -496,42 +497,34 @@ namespace SS_OpenCV
             if (img == null) // verify if the image is already opened
                 return;
             Cursor = Cursors.WaitCursor; // clock cursor 
-            int[] coords1 = new int[] { 1120, 305, 1174, 388 };
-            int[] coords2 = new int[] { 1188, 301, 1252, 388 };
-            List<int[]> coords = new List<int[]>{coords1, coords2};
-            //int[][] coords = new int[][] {coords1, coords2};
 
-            /*List of detected digits - one detected object is written as int array[left_coordinate, detected_digit]
-              left_coordinate needed for determine digits order
-              detected_digit is setted after call function
-            */
-            List<int[]> detected_digits = new List<int[]> {new int[] {coords1[0], -1}, new int[] {coords2[0], -1} };
+            //copy Undo Image
+            imgUndo = img.Copy();
+            imgOriginal = img.Copy();
 
+            //Classification results (list for each object)
+            List<int> classification = new List<int>();
+            
             //HSV image inside imgUndo, you can change imgUndo to imgHsv to get different result (also Bgr to Hsv change needed in BgrToHsv func)
             Identify.BgrToHsv(img, imgUndo);
 
-            //Drawing rectangle
-            //Identify.DrawRectangle(img, new int[]{200, 300, 400, 500});
-
-            for (int i = 0; i < coords.Count; i++)
+            List<int[]> numberObjects = Identify.connectedComponents(imgUndo, img);
+            
+            foreach(int[] number in numberObjects)
             {
                 //Scale digits image
-                digits = Identify.Scale(digits, coords[i]);
+                digits = Identify.Scale(digits, number);
 
                 //Thresholding detected sector
-                Identify.ConvertToBW_Otsu_coords(img, coords[i]);
+                Identify.ConvertToBW_Otsu_coords(imgOriginal, number);
 
                 //Identify digit
-                detected_digits[i][0] = coords[i][0]; //saving left_coordinate 
-                detected_digits[i][1] = Identify.DetectDigit(img, digits, coords[i]); //saving detected digit
+                classification.Add(Identify.DetectDigit(imgOriginal, digits, number));
             }
-            
-            
-            //Console.Out.WriteLine(detected_digits);
+            Console.Out.WriteLine(classification);
 
-            //ImageViewer.Image = digits[9].Bitmap;
             //ImageViewer.Image = imgHsv.Bitmap;
-            ImageViewer.Image = img.Bitmap;
+            ImageViewer.Image = imgOriginal.Bitmap;
 
             ImageViewer.Refresh(); // refresh image on the screen
             Cursor = Cursors.Default; // normal cursor

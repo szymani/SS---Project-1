@@ -189,7 +189,7 @@ namespace SS_OpenCV
             return dict;
         }
 
-        public static List<int[]> connectedComponents(Image<Hsv, byte> imgHsv, Image<Bgr, byte> img, int hueLimit  =  100, int satLimit  =  50, int valLimit =  50)
+        public static List<int[]> connectedComponents(Image<Bgr, byte> imgHsv, Image<Bgr, byte> img, int hueLimit  =  20, int satLimit  =  50, int valLimit = 30)
         {
             unsafe
             {
@@ -207,12 +207,13 @@ namespace SS_OpenCV
                 int saturation = 0;
 
                 int[,] indexTable = new int[width, height];
-                int[,] indexTableBlack = new int[width, height];
                 int currentMax = 0;
                 List<int> objects = new List<int>();
                 List<(int, int)> aliases = new List<(int, int)>();
                 List<int[]> result = new List<int[]>();
 
+                int[,] indexTableBlack = new int[width, height];
+                int currentMaxBlack = 0;
                 List<int> objectsBlack = new List<int>();
                 List<(int, int)> aliasesBlack = new List<(int, int)>();
                 List<int[]> resultBlack = new List<int[]>();
@@ -225,7 +226,7 @@ namespace SS_OpenCV
                         saturation = ((dataPtr + y * m.widthStep + x * nChan)[1] * 100) / 255;
                         hue = ((dataPtr + y * m.widthStep + x * nChan)[2] * 360) / 255;
 
-                        if ((hue >= 0 && hue <= hueLimit) && (saturation <= 100 && saturation > 50) && (value <= 100 && value > 50))         //if red
+                        if (((hue >= 0 && hue <= hueLimit)||(hue >= 360 - hueLimit && hue <= 360)) && (saturation <= 100 && saturation > satLimit) && (value <= 100 && value > valLimit))         //if red
                         {
                             //8 - connectivity
                             if (indexTable[x + 1, y - 1] != 0)
@@ -284,76 +285,237 @@ namespace SS_OpenCV
                                 indexTable[x, y] = currentMax;
                                 objects.Add(currentMax);
                             }
-                        }
-                        if (value <= 20 && value >= 0)         //if black
-                        {
-                            //8 - connectivity
-                            if (indexTableBlack[x + 1, y - 1] != 0)
-                                indexTableBlack[x, y] = indexTableBlack[x + 1, y - 1];
-
-                            if (indexTableBlack[x, y - 1] != 0 && indexTableBlack[x, y] != indexTableBlack[x, y - 1])
-                            {
-                                if (indexTableBlack[x, y] == 0)
-                                    indexTableBlack[x, y] = indexTableBlack[x, y - 1];
-                                else                  //Find lower index,  change  higher  to lower
-                                {
-                                    if (indexTableBlack[x, y] < indexTableBlack[x, y - 1])
-                                        aliasesBlack.Add((indexTableBlack[x, y], indexTableBlack[x, y - 1]));
-
-                                    else
-                                    {
-                                        indexTableBlack[x, y] = indexTableBlack[x, y - 1];
-                                        aliasesBlack.Add((indexTableBlack[x, y - 1], indexTableBlack[x, y]));
-                                    }
-                                }
-                            }
-                            if (indexTableBlack[x - 1, y - 1] != 0 && indexTableBlack[x, y] != indexTableBlack[x - 1, y - 1])
-                            {
-                                if (indexTableBlack[x, y] == 0)
-                                    indexTableBlack[x, y] = indexTableBlack[x - 1, y - 1];
-                                else
-                                {
-                                    if (indexTableBlack[x, y] < indexTableBlack[x - 1, y - 1])
-                                        aliasesBlack.Add((indexTableBlack[x, y], indexTableBlack[x - 1, y - 1]));
-                                    else
-                                    {
-                                        indexTableBlack[x, y] = indexTableBlack[x - 1, y - 1];
-                                        aliasesBlack.Add((indexTableBlack[x - 1, y - 1], indexTableBlack[x, y]));
-                                    }
-                                }
-                            }
-                            if (indexTableBlack[x - 1, y] != 0 && indexTableBlack[x, y] != indexTableBlack[x - 1, y])
-                            {
-                                if (indexTableBlack[x, y] == 0)
-                                    indexTableBlack[x, y] = indexTableBlack[x - 1, y];
-                                else
-                                {
-                                    if (indexTableBlack[x, y] < indexTableBlack[x - 1, y])
-                                        aliasesBlack.Add((indexTableBlack[x, y], indexTableBlack[x - 1, y]));
-
-                                    else
-                                    {
-                                        indexTableBlack[x, y] = indexTableBlack[x - 1, y];
-                                        aliasesBlack.Add((indexTableBlack[x - 1, y], indexTableBlack[x, y]));
-                                    }
-                                }
-                            }
-                            if (indexTableBlack[x, y] == 0)
-                            {
-                                currentMax = currentMax + 1;
-                                indexTableBlack[x, y] = currentMax;
-                                objectsBlack.Add(currentMax);
-                            }
-                        }
+                        }                  
                         else
                         {
                             indexTable[x, y] = 0;
-                            indexTableBlack[x, y] = 0;
                         }
                     }
                 }
 
-                //------------Anotated pixels Check--------------------
+                IDictionary<int, List<int>> dict = getAliases(aliases);
+
+                for (y = 0; y < height; y++)
+                {
+                    for (x = 0; x < width; x++)
+                    {
+                        foreach (int index in dict.Keys)
+                        {
+                            if (dict[index].Contains(indexTable[x, y]))
+                            {
+                                indexTable[x, y] = index;
+                            }
+                        }
+                    }
+                }
+
+                List<int> toRemove = new List<int>();
+                foreach (int obj in objects)
+                {
+                    foreach (int index in dict.Keys)
+                    {
+                        if (dict[index].Contains(obj))
+                        {
+                            toRemove.Add(obj);
+                        }
+                    }
+                }
+                foreach (int key in toRemove)
+                {
+                    objects.Remove(key);
+                }
+                foreach (int obj in objects)
+                {
+                    int count = 0;
+                    foreach (int num in indexTable)
+                    {
+                        if (num.Equals(obj))
+                            count += 1;
+                    }
+
+                    if (count > 500)
+                    {
+                        int code = obj;
+                        int begX = 10000000;
+                        int begY = 10000000;
+                        int endX = -1;
+                        int endY = -1;
+
+                        for (int i = 0; i < height; i++)
+                        {
+                            for (int j = 0; j < width; j++)
+                            {
+                                if (indexTable[j, i] == code)
+                                {
+                                    if (i < begX)
+                                        begX = i;
+                                    if (j < begY)
+                                        begY = j;
+                                    if (i > endX)
+                                        endX = i;
+                                    if (j > endY)
+                                        endY = j;
+                                }
+                            }
+                        }
+                        result.Add(new int[] { begY, begX, endY, endX });
+                    }
+                }
+
+                foreach(int[] res in result)
+                {
+                    for (y = res[1]; y <= res[3]; y++)
+                    {
+                        for (x = res[0]; x <= res[2]; x++)
+                        {
+                            value = ((dataPtr + y * m.widthStep + x * nChan)[0] * 100) / 255;
+                            saturation = ((dataPtr + y * m.widthStep + x * nChan)[1] * 100) / 255;
+                            hue = ((dataPtr + y * m.widthStep + x * nChan)[2] * 360) / 255;
+
+                            if (value <= 35 && value >= 0)         //if black
+                            {
+                                //8 - connectivity
+                                if (indexTableBlack[x + 1, y - 1] != 0)
+                                    indexTableBlack[x, y] = indexTableBlack[x + 1, y - 1];
+
+                                if (indexTableBlack[x, y - 1] != 0 && indexTableBlack[x, y] != indexTableBlack[x, y - 1])
+                                {
+                                    if (indexTableBlack[x, y] == 0)
+                                        indexTableBlack[x, y] = indexTableBlack[x, y - 1];
+                                    else                  //Find lower index,  change  higher  to lower
+                                    {
+                                        if (indexTableBlack[x, y] < indexTableBlack[x, y - 1])
+                                            aliasesBlack.Add((indexTableBlack[x, y], indexTableBlack[x, y - 1]));
+
+                                        else
+                                        {
+                                            indexTableBlack[x, y] = indexTableBlack[x, y - 1];
+                                            aliasesBlack.Add((indexTableBlack[x, y - 1], indexTableBlack[x, y]));
+                                        }
+                                    }
+                                }
+                                if (indexTableBlack[x - 1, y - 1] != 0 && indexTableBlack[x, y] != indexTableBlack[x - 1, y - 1])
+                                {
+                                    if (indexTableBlack[x, y] == 0)
+                                        indexTableBlack[x, y] = indexTableBlack[x - 1, y - 1];
+                                    else
+                                    {
+                                        if (indexTableBlack[x, y] < indexTableBlack[x - 1, y - 1])
+                                            aliasesBlack.Add((indexTableBlack[x, y], indexTableBlack[x - 1, y - 1]));
+                                        else
+                                        {
+                                            indexTableBlack[x, y] = indexTableBlack[x - 1, y - 1];
+                                            aliasesBlack.Add((indexTableBlack[x - 1, y - 1], indexTableBlack[x, y]));
+                                        }
+                                    }
+                                }
+                                if (indexTableBlack[x - 1, y] != 0 && indexTableBlack[x, y] != indexTableBlack[x - 1, y])
+                                {
+                                    if (indexTableBlack[x, y] == 0)
+                                        indexTableBlack[x, y] = indexTableBlack[x - 1, y];
+                                    else
+                                    {
+                                        if (indexTableBlack[x, y] < indexTableBlack[x - 1, y])
+                                            aliasesBlack.Add((indexTableBlack[x, y], indexTableBlack[x - 1, y]));
+
+                                        else
+                                        {
+                                            indexTableBlack[x, y] = indexTableBlack[x - 1, y];
+                                            aliasesBlack.Add((indexTableBlack[x - 1, y], indexTableBlack[x, y]));
+                                        }
+                                    }
+                                }
+                                if (indexTableBlack[x, y] == 0)
+                                {
+                                    currentMaxBlack = currentMaxBlack + 1;
+                                    indexTableBlack[x, y] = currentMaxBlack;
+                                    objectsBlack.Add(currentMaxBlack);
+                                }
+                            }
+                            else
+                            {
+                                indexTableBlack[x, y] = 0;
+                            }
+                        }
+                    }
+                }
+
+
+
+
+
+                dict = getAliases(aliasesBlack);
+
+                for (y = 0; y < height; y++)
+                {
+                    for (x = 0; x < width; x++)
+                    {
+                        foreach (int index in dict.Keys)
+                        {
+                            if (dict[index].Contains(indexTableBlack[x, y]))
+                            {
+                                indexTableBlack[x, y] = index;
+                            }
+                        }
+                    }
+                }
+
+                toRemove = new List<int>();
+                foreach (int obj in objectsBlack)
+                {
+                    foreach (int index in dict.Keys)
+                    {
+                        if (dict[index].Contains(obj))
+                        {
+                            toRemove.Add(obj);
+                        }
+                    }
+                }
+
+                foreach (int key in toRemove)
+                {
+                    objectsBlack.Remove(key);
+                }
+
+                foreach (int obj in objectsBlack)
+                {
+                    int count = 0;
+                    foreach (int num in indexTableBlack)
+                    {
+                        if (num.Equals(obj))
+                            count += 1;
+                    }
+
+                    if (count > 500)
+                    {
+                        int code = obj;
+                        int begX = 10000000;
+                        int begY = 10000000;
+                        int endX = -1;
+                        int endY = -1;
+
+                        for (int i = 0; i < height; i++)
+                        {
+                            for (int j = 0; j < width; j++)
+                            {
+                                if (indexTableBlack[j, i] == code)
+                                {
+                                    if (i < begX)
+                                        begX = i;
+                                    if (j < begY)
+                                        begY = j;
+                                    if (i > endX)
+                                        endX = i;
+                                    if (j > endY)
+                                        endY = j;
+                                }
+                            }
+                        }
+                        resultBlack.Add(new int[] { begY, begX, endY, endX });
+                    }
+                }
+
+                //------------Pixel Anotation Check--------------------
                 MIplImage m2 = img.MIplImage;
                 byte* dataPtr2 = (byte*)m2.imageData.ToPointer(); // Pointer to the image
 
@@ -362,6 +524,7 @@ namespace SS_OpenCV
                 int nChan2 = m.nChannels; // number of channels - 3
 
                 int changedPixels = 0;
+                int changedPixelsBlack = 0;
                 for (y = 0; y < height; y++)
                 {
                     for (x = 0; x < width; x++)
@@ -371,7 +534,7 @@ namespace SS_OpenCV
                             // get pixel address
                             (dataPtr2 + y * m2.widthStep + x * nChan2)[0] = 255;
                             (dataPtr2 + y * m2.widthStep + x * nChan2)[1] = 0;
-                            (dataPtr2 + y * m2.widthStep + x * nChan2)[2] = 0;
+                            (dataPtr2 + y * m2.widthStep + x * nChan2)[2] = 255;
                             changedPixels += 1;
                         }
                     }
@@ -381,90 +544,23 @@ namespace SS_OpenCV
                 {
                     for (x = 0; x < width; x++)
                     {
-                        if (!indexTable[x, y].Equals(0))
+                        if (!indexTableBlack[x, y].Equals(0))
                         {
                             // get pixel address
                             (dataPtr2 + y * m2.widthStep + x * nChan2)[0] = 255;
                             (dataPtr2 + y * m2.widthStep + x * nChan2)[1] = 255;
                             (dataPtr2 + y * m2.widthStep + x * nChan2)[2] = 0;
-                            changedPixels += 1;
+                            changedPixelsBlack += 1;
                         }
                     }
                 }
-                //-----------------------------------------------
+                //-----------------------------------------------------
 
+                //Drawing rectangle
+                Identify.DrawRectangles(img, result);
+                Identify.DrawRectangles(img, resultBlack);
 
-
-                //IDictionary<int, List<int>> dict = getAliases(aliases);
-
-                //for (y = 0; y < height; y++)
-                //{
-                //    for (x = 0; x < width; x++)
-                //    { 
-                //        foreach(int index in dict.Keys)
-                //        {
-                //            if (dict[index].Contains(indexTable[x, y]))
-                //            {
-                //                indexTable[x, y] = index;
-                //            }
-                //        }
-                //    }
-                //}
-
-                //List<int> toRemove = new List<int>();
-                //foreach (int obj in objects)
-                //{
-                //    foreach (int index in dict.Keys)
-                //    {
-                //        if (dict[index].Contains(obj))
-                //        {
-                //            toRemove.Add(obj);
-                //        }
-                //    }
-                //}
-                //foreach (int key in toRemove)
-                //{
-                //    objects.Remove(key);
-                //}
-
-                //foreach (int obj in objects)
-                //{
-                //    int count = 0;
-                //    foreach (int num in indexTable)
-                //    {
-                //        if (num.Equals(obj))
-                //            count += 1;
-                //    }
-
-                //    if (count>500)
-                //    {
-                //        int code = obj;
-                //        int begX = 10000000;
-                //        int begY = 10000000;
-                //        int endX = -1;
-                //        int endY = -1;
-
-                //        for (int i = 0; i < height; i++)
-                //        {
-                //            for (int j = 0; j < width; j++)
-                //            {
-                //                if (indexTable[j, i] == code)
-                //                {
-                //                    if (i < begX)
-                //                        begX = i;
-                //                    if (j < begY)
-                //                        begY = j;
-                //                    if (i > endX)
-                //                        endX = i;
-                //                    if (j > endY)
-                //                        endY = j;
-                //                }
-                //            }
-                //        }
-                //        result.Add(new int[] { begY, begX, endY, endX });
-                //    }
-                //}
-                return result;
+                return resultBlack;
             }
         }
 
@@ -526,6 +622,7 @@ namespace SS_OpenCV
 
                 int width = sign_coords[2] - sign_coords[0];
                 int height = sign_coords[3] - sign_coords[1];
+                int area = width * height;
                 int nChan = m.nChannels; // number of channels - 3
                 int padding = m.widthStep - m.nChannels * m.width;
                 int[] digits_similarity = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
