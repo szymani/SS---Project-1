@@ -98,7 +98,7 @@ namespace SS_OpenCV
             }
         }
 
-        public static void DrawRectangles(Image<Bgr, byte> img, List<int[]> sign_coords)
+        public static void DrawRectangles(Image<Bgr, byte> img, List<int[]> sign_coords, int type = 0)
         {
             unsafe
             {
@@ -110,20 +110,14 @@ namespace SS_OpenCV
                 int height = img.Height;
                 int nChan = m.nChannels; // number of channels - 3
                 int padding = m.widthStep - m.nChannels * m.width;
-                //int[] sign_coords = new int[4];
-                /*
-                sign_coords[0] = Left-x
-                sign_coords[1] = Top-y
-                sign_coords[2] = Right-x
-                sign_coords[3] = Bottom-y
-                */
-                /*
-                sign_coords[0] = 200;
-                sign_coords[1] = 300;
-                sign_coords[2] = 400;
-                sign_coords[3] = 500;
-                */
-            
+
+
+                byte[] colors = new byte[3];
+                if (type.Equals(0))
+                    colors = new byte[]{0 ,0 ,255 };
+                else
+                    colors = new byte[] { 255, 0, 0 };
+
                 for (y = 0; y < height; y++)
                 {
                     for (x = 0; x < width; x++)
@@ -137,9 +131,9 @@ namespace SS_OpenCV
                                 )
                             {
                                 // get pixel address
-                                (dataPtr + y * m.widthStep + x * nChan)[0] = 0;
-                                (dataPtr + y * m.widthStep + x * nChan)[1] = 0;
-                                (dataPtr + y * m.widthStep + x * nChan)[2] = 255;
+                                (dataPtr + y * m.widthStep + x * nChan)[0] = colors[0];
+                                (dataPtr + y * m.widthStep + x * nChan)[1] = colors[1];
+                                (dataPtr + y * m.widthStep + x * nChan)[2] = colors[2];
                             }
                         }
                     }
@@ -374,9 +368,11 @@ namespace SS_OpenCV
                     {
                         for (x = res[0]; x <= res[2]; x++)
                         {
-                            value = (dataPtrOtsu + y * m.widthStep + x * nChan)[0];
+                            //value = (dataPtrOtsu + y * m.widthStep + x * nChan)[0];
 
-                            if (value.Equals(0))         //if black
+                            value = ((dataPtr + y * m.widthStep + x * nChan)[0] * 100) / 255;
+
+                            if (value<20)         //if black
                             {
                                 //8 - connectivity
                                 if (indexTableBlack[x + 1, y - 1] != 0)
@@ -477,7 +473,6 @@ namespace SS_OpenCV
                     objectsBlack.Remove(key);
                 }
 
-                List<int> wrongClasses = new List<int>();
                 foreach (int obj in objectsBlack)
                 {
                     int count = 0;
@@ -486,7 +481,6 @@ namespace SS_OpenCV
                         if (num.Equals(obj))
                             count += 1;
                     }
-
                     if (count > 400)
                     {
                         int code = obj;
@@ -515,19 +509,26 @@ namespace SS_OpenCV
                             resultBlack.Add(new int[] { begY, begX, endY, endX });
                     }
                 }
+
+                //List<int[]> finalBlack = new List<int[]>();
                 //foreach (int[] red in result)
                 //{
-                //    foreach(int[] black in resultBlack.ToArray())
+
+                //    foreach (int[] black in resultBlack.ToArray())
                 //    {
-                //        if(((black[0] - red[0]) < 10) || ((black[1] - red[1]) < 10) || ((black[2] - red[2]) < 10) || ((black[3] - red[3]) < 10))
-                //            resultBlack.Remove(black);
+
+                //        if (((black[0] - red[0]) < 10) || ((black[1] - red[1]) < 10) || ((red[2] - black[2]) < 10) || ((red[3] - black[3]) < 10))
+                //        {
+                //        }
+ 
                 //    }
                 //}
 
 
+
                 //Drawing rectangle
                 Identify.DrawRectangles(img, result);
-                Identify.DrawRectangles(img, resultBlack);
+                Identify.DrawRectangles(img, resultBlack, 1);
 
                 return new List<List<int[]>> { result, resultBlack };
             }
