@@ -189,7 +189,7 @@ namespace SS_OpenCV
             return dict;
         }
 
-        public static List<int[]> connectedComponents(Image<Hsv, byte> imgHsv, Image<Bgr, byte> img, int hueLimit  =  100, int satLimit  =  50, int valLimit =  50)
+        public static List<int[]> connectedComponents(Image<Hsv, byte> imgHsv, Image<Bgr, byte> img, int hueLimit  =  40, int satLimit  =  50, int valLimit = 30)
         {
             unsafe
             {
@@ -225,7 +225,7 @@ namespace SS_OpenCV
                         saturation = ((dataPtr + y * m.widthStep + x * nChan)[1] * 100) / 255;
                         hue = ((dataPtr + y * m.widthStep + x * nChan)[2] * 360) / 255;
 
-                        if ((hue >= 0 && hue <= hueLimit) && (saturation <= 100 && saturation > 50) && (value <= 100 && value > 50))         //if red
+                        if (((hue >= 0 && hue <= hueLimit)||(hue >= 360 - hueLimit && hue <= 360)) && (saturation <= 100 && saturation > satLimit) && (value <= 100 && value > valLimit))         //if red
                         {
                             //8 - connectivity
                             if (indexTable[x + 1, y - 1] != 0)
@@ -285,7 +285,7 @@ namespace SS_OpenCV
                                 objects.Add(currentMax);
                             }
                         }
-                        if (value <= 20 && value >= 0)         //if black
+                        else if (value <= 35 && value >= 0)         //if black
                         {
                             //8 - connectivity
                             if (indexTableBlack[x + 1, y - 1] != 0)
@@ -362,6 +362,7 @@ namespace SS_OpenCV
                 int nChan2 = m.nChannels; // number of channels - 3
 
                 int changedPixels = 0;
+                int changedPixelsBlack = 0;
                 for (y = 0; y < height; y++)
                 {
                     for (x = 0; x < width; x++)
@@ -371,7 +372,7 @@ namespace SS_OpenCV
                             // get pixel address
                             (dataPtr2 + y * m2.widthStep + x * nChan2)[0] = 255;
                             (dataPtr2 + y * m2.widthStep + x * nChan2)[1] = 0;
-                            (dataPtr2 + y * m2.widthStep + x * nChan2)[2] = 0;
+                            (dataPtr2 + y * m2.widthStep + x * nChan2)[2] = 255;
                             changedPixels += 1;
                         }
                     }
@@ -381,13 +382,13 @@ namespace SS_OpenCV
                 {
                     for (x = 0; x < width; x++)
                     {
-                        if (!indexTable[x, y].Equals(0))
+                        if (!indexTableBlack[x, y].Equals(0))
                         {
                             // get pixel address
                             (dataPtr2 + y * m2.widthStep + x * nChan2)[0] = 255;
                             (dataPtr2 + y * m2.widthStep + x * nChan2)[1] = 255;
                             (dataPtr2 + y * m2.widthStep + x * nChan2)[2] = 0;
-                            changedPixels += 1;
+                            changedPixelsBlack += 1;
                         }
                     }
                 }
