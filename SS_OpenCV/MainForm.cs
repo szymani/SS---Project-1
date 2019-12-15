@@ -16,6 +16,7 @@ namespace SS_OpenCV
 
         Image<Bgr, Byte> img = null; // working image
         Image<Bgr, Byte> imgUndo = null; // undo backup image - UNDO
+        Image<Bgr, Byte> imgOriginal = null; //never changed
         Image<Hsv, Byte> imgHsv = null; // hsv image
         Image<Bgr, Byte> digit0 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\0.png");
         Image<Bgr, Byte> digit1 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\1.png");
@@ -499,21 +500,27 @@ namespace SS_OpenCV
 
             //copy Undo Image
             imgUndo = img.Copy();
+            imgOriginal = img.Copy();
 
+            List<int> classification = new List<int>();
             //HSV image inside imgUndo, you can change imgUndo to imgHsv to get different result (also Bgr to Hsv change needed in BgrToHsv func)
             Identify.BgrToHsv(img, imgUndo);
 
             List<int[]> numberObjects = Identify.connectedComponents(imgUndo, img);
 
-            //Scale digits image
-            digits = Identify.Scale(digits, new int[] { 1120, 305, 1174, 388 });
+            foreach(int[] number in numberObjects)
+            {
+                //Scale digits image
+                digits = Identify.Scale(digits, number);
 
-            //Thresholding detected sector
-            //Identify.ConvertToBW_Otsu_coords(img, new int[] { 1120, 305, 1174, 388 });
-            Identify.ConvertToBW_Otsu_coords(img, new int[] { 1120, 305, 1174, 388 });
+                //Thresholding detected sector
+                //Identify.ConvertToBW_Otsu_coords(img, new int[] { 1120, 305, 1174, 388 });
+                Identify.ConvertToBW_Otsu_coords(imgOriginal, number);
 
-            //Identify digit
-            Identify.DetectDigit(img, digits, new int[] { 1120, 305, 1174, 388 });
+                //Identify digit
+                classification.Add(Identify.DetectDigit(imgOriginal, digits, number));
+            }
+
 
             //ImageViewer.Image = digits[9].Bitmap;
             //ImageViewer.Image = imgHsv.Bitmap;
