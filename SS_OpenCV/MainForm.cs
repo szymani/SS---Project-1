@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 using Emgu.CV;
 using Emgu.CV.Structure;
@@ -477,11 +478,14 @@ namespace SS_OpenCV
             //HSV image inside imgUndo
             Identify.BgrToHsv(img, imgHsv);
 
-            //Drawing rectangle
-            Identify.DrawRectangle(img, new int[]{200, 300, 400, 500});
+            List<int[]> signsCoor = Identify.connectedComponents(imgHsv, img);
 
-            ImageViewer.Image = imgHsv.Bitmap;
-            //ImageViewer.Image = img.Bitmap;
+            //Drawing rectangle
+            Identify.DrawRectangles(img, signsCoor);
+            
+            ImageViewer.Image = img.Bitmap;
+
+            //ImageViewer.Image = imgHsv.Bitmap;
 
             ImageViewer.Refresh(); // refresh image on the screen
             Cursor = Cursors.Default; // normal cursor
