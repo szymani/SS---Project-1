@@ -115,8 +115,10 @@ namespace SS_OpenCV
                 byte[] colors = new byte[3];
                 if (type.Equals(0))
                     colors = new byte[]{0 ,0 ,255 };
-                else
+                else if (type.Equals(1))
                     colors = new byte[] { 255, 0, 0 };
+                else if (type.Equals(2))
+                    colors = new byte[] { 0, 255, 0 };
 
                 for (y = 0; y < height; y++)
                 {
@@ -372,7 +374,7 @@ namespace SS_OpenCV
 
                             value = ((dataPtr + y * m.widthStep + x * nChan)[0] * 100) / 255;
 
-                            if (value<20)         //if black
+                            if (value<35)         //if black
                             {
                                 //8 - connectivity
                                 if (indexTableBlack[x + 1, y - 1] != 0)
@@ -510,25 +512,22 @@ namespace SS_OpenCV
                     }
                 }
 
-                //List<int[]> finalBlack = new List<int[]>();
-                //foreach (int[] red in result)
-                //{
-
-                //    foreach (int[] black in resultBlack.ToArray())
-                //    {
-
-                //        if (((black[0] - red[0]) < 10) || ((black[1] - red[1]) < 10) || ((red[2] - black[2]) < 10) || ((red[3] - black[3]) < 10))
-                //        {
-                //        }
- 
-                //    }
-                //}
-
-
+                List<int[]> newBlack = new List<int[]>();
+                foreach (int[] red in result)
+                {
+                    foreach (int[] black in resultBlack)
+                    {
+                        if ((black[0] - red[0] > 20) && (black[1] - red[1] > 20) && (red[2] - black[2] > 20) && (red[3] - black[3] > 20))
+                        {
+                            newBlack.Add(black);
+                        }
+                    }
+                }
 
                 //Drawing rectangle
                 Identify.DrawRectangles(img, result);
                 Identify.DrawRectangles(img, resultBlack, 1);
+                Identify.DrawRectangles(img, newBlack, 2);
 
                 return new List<List<int[]>> { result, resultBlack };
             }
