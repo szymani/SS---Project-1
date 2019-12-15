@@ -502,6 +502,9 @@ namespace SS_OpenCV
             imgUndo = img.Copy();
             imgOriginal = img.Copy();
 
+            //List of detected signs
+            List<string[]> signs = new List<string[]>();
+
             //Classification results (list for each object)
             List<int> classification = new List<int>();
             
@@ -521,7 +524,8 @@ namespace SS_OpenCV
                 //Identify digit
                 classification.Add(Identify.DetectDigit(imgOriginal, digits, number));
             }
-            Console.Out.WriteLine(classification);
+
+            signs = Identify.CreateFinalList(classification, numberObjects);
 
             //ImageViewer.Image = imgHsv.Bitmap;
             ImageViewer.Image = imgOriginal.Bitmap;

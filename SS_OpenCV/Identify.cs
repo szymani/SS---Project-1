@@ -612,7 +612,7 @@ namespace SS_OpenCV
             }
         }
 
-        public static int DetectDigit(Image<Bgr, byte> img, List<Image<Bgr, Byte>> digits, int[] sign_coords)
+        public static int DetectDigit(Image<Bgr, byte> img, List<Image<Bgr, Byte>> digits, int[] sign_coords, double tolerance = 0.8)
         {
             unsafe
             {
@@ -628,6 +628,7 @@ namespace SS_OpenCV
                 int[] digits_similarity = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
                 int maximum_similarity = 0;
                 int index_max_similarity = -1;
+                double similarity_factor;
                 ConvertToBW_Otsu_coords(img, sign_coords);
 
                 for (int i = 0; i < 10; i++)
@@ -653,7 +654,11 @@ namespace SS_OpenCV
                 }
                 //Console.Out.WriteLine(index_max_similarity);
                 //Console.Out.WriteLine(digits_similarity);
-                return index_max_similarity;
+                similarity_factor = (double)maximum_similarity / area;
+                if (similarity_factor > tolerance)
+                    return index_max_similarity;
+                else
+                    return -1;
             }
         }
 
@@ -780,5 +785,24 @@ namespace SS_OpenCV
             }
         }
 
+        public static List<string[]> CreateFinalList(List<int> classification, List<int[]> numberObjects)
+        {
+            unsafe
+            {
+                List<string[]> signs = new List<string[]>();
+
+                foreach (int[] number in numberObjects)
+                {
+                    string[] dummy_vector = new string[5];
+                    dummy_vector[0] = "70";   // Speed limit
+                    dummy_vector[1] = number[0].ToString(); // Left-x
+                    dummy_vector[2] = number[1].ToString();  // Top-y
+                    dummy_vector[3] = number[2].ToString(); // Right-x
+                    dummy_vector[4] = number[3].ToString();  // Bottom-y
+                    signs.Add(dummy_vector);
+                }
+                return signs;
+            }
+        }
     }
 }
