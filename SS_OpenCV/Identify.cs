@@ -189,7 +189,7 @@ namespace SS_OpenCV
             return dict;
         }
 
-        public static List<int[]> connectedComponents(Image<Bgr, byte> imgHsv, Image<Bgr, byte> img, int hueLimit  =  20, int satLimit  =  50, int valLimit = 30)
+        public static List<List<int[]>> connectedComponents(Image<Bgr, byte> imgHsv, Image<Bgr, byte> img, int hueLimit  =  20, int satLimit  =  50, int valLimit = 30)
         {
             unsafe
             {
@@ -314,7 +314,7 @@ namespace SS_OpenCV
                 {
                     foreach (int index in dict.Keys)
                     {
-                        if (dict[index].Contains(obj))
+                        if (dict[index].Contains(obj) && !index.Equals(obj))
                         {
                             toRemove.Add(obj);
                         }
@@ -362,17 +362,21 @@ namespace SS_OpenCV
                     }
                 }
 
+                Image<Bgr, Byte> otsu = img.Copy();
+
                 foreach(int[] res in result)
                 {
+                    Identify.ConvertToBW_Otsu_coords(otsu, res);
+                    MIplImage mOtsu = otsu.MIplImage;
+                    byte* dataPtrOtsu = (byte*)mOtsu.imageData.ToPointer(); // Pointer to the image
+
                     for (y = res[1]; y <= res[3]; y++)
                     {
                         for (x = res[0]; x <= res[2]; x++)
                         {
-                            value = ((dataPtr + y * m.widthStep + x * nChan)[0] * 100) / 255;
-                            saturation = ((dataPtr + y * m.widthStep + x * nChan)[1] * 100) / 255;
-                            hue = ((dataPtr + y * m.widthStep + x * nChan)[2] * 360) / 255;
+                            value = (dataPtrOtsu + y * m.widthStep + x * nChan)[0];
 
-                            if (value <= 35 && value >= 0)         //if black
+                            if (value.Equals(0))         //if black
                             {
                                 //8 - connectivity
                                 if (indexTableBlack[x + 1, y - 1] != 0)
@@ -440,10 +444,6 @@ namespace SS_OpenCV
                     }
                 }
 
-
-
-
-
                 dict = getAliases(aliasesBlack);
 
                 for (y = 0; y < height; y++)
@@ -465,7 +465,7 @@ namespace SS_OpenCV
                 {
                     foreach (int index in dict.Keys)
                     {
-                        if (dict[index].Contains(obj))
+                        if (dict[index].Contains(obj) && !index.Equals(obj))
                         {
                             toRemove.Add(obj);
                         }
@@ -477,6 +477,7 @@ namespace SS_OpenCV
                     objectsBlack.Remove(key);
                 }
 
+                List<int> wrongClasses = new List<int>();
                 foreach (int obj in objectsBlack)
                 {
                     int count = 0;
@@ -486,7 +487,7 @@ namespace SS_OpenCV
                             count += 1;
                     }
 
-                    if (count > 500)
+                    if (count > 400)
                     {
                         int code = obj;
                         int begX = 10000000;
@@ -511,68 +512,24 @@ namespace SS_OpenCV
                                 }
                             }
                         }
-                        resultBlack.Add(new int[] { begY, begX, endY, endX });
+                            resultBlack.Add(new int[] { begY, begX, endY, endX });
                     }
                 }
+                //foreach (int[] red in result)
+                //{
+                //    foreach(int[] black in resultBlack.ToArray())
+                //    {
+                //        if(((black[0] - red[0]) < 10) || ((black[1] - red[1]) < 10) || ((black[2] - red[2]) < 10) || ((black[3] - red[3]) < 10))
+                //            resultBlack.Remove(black);
+                //    }
+                //}
 
-                int ind = 0;
-                List<byte[]> colors = new List<byte[]>{
-                    new byte[]{135,20,20},
-                    new byte[]{200,20,20},
-                    new byte[]{35,200,20},
-                    new byte[]{35,20,200},
-                    new byte[]{0,100,200},
-                    new byte[]{50,20,100}
-                };
-
-
-                //------------Pixel Anotation Check--------------------
-                MIplImage m2 = img.MIplImage;
-                byte* dataPtr2 = (byte*)m2.imageData.ToPointer(); // Pointer to the image
-
-                int width2 = img.Width;
-                int height2 = img.Height;
-                int nChan2 = m.nChannels; // number of channels - 3
-
-                int changedPixels = 0;
-                int changedPixelsBlack = 0;
-                for (y = 0; y < height; y++)
-                {
-                    for (x = 0; x < width; x++)
-                    {
-                        if (!indexTable[x, y].Equals(0))
-                        {
-                            // get pixel address
-                            (dataPtr2 + y * m2.widthStep + x * nChan2)[0] = 255;
-                            (dataPtr2 + y * m2.widthStep + x * nChan2)[1] = 0;
-                            (dataPtr2 + y * m2.widthStep + x * nChan2)[2] = 255;
-                            changedPixels += 1;
-                        }
-                    }
-                }
-
-                for (y = 0; y < height; y++)
-                {
-                    for (x = 0; x < width; x++)
-                    {
-                        if (!indexTableBlack[x, y].Equals(0))
-                        {
-                            // get pixel address
-                            (dataPtr2 + y * m2.widthStep + x * nChan2)[0] = 255;
-                            (dataPtr2 + y * m2.widthStep + x * nChan2)[1] = 255;
-                            (dataPtr2 + y * m2.widthStep + x * nChan2)[2] = 0;
-                            changedPixelsBlack += 1;
-                            ind += 1;
-                        }
-                    }
-                }
-                //-----------------------------------------------------
 
                 //Drawing rectangle
                 Identify.DrawRectangles(img, result);
                 Identify.DrawRectangles(img, resultBlack);
 
-                return resultBlack;
+                return new List<List<int[]>> { result, resultBlack };
             }
         }
 
@@ -634,6 +591,7 @@ namespace SS_OpenCV
 
                 int width = sign_coords[2] - sign_coords[0];
                 int height = sign_coords[3] - sign_coords[1];
+                int area = width * height;
                 int nChan = m.nChannels; // number of channels - 3
                 int padding = m.widthStep - m.nChannels * m.width;
                 int[] digits_similarity = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
