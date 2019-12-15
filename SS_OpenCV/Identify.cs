@@ -467,7 +467,56 @@ namespace SS_OpenCV
                 return result;
             }
         }
-        public static void Scale(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy, float scaleFactor)
+
+        public static List<Image<Bgr, Byte>> Scale(List<Image<Bgr, Byte>> digits, int[] sign_coords)
+        {
+            unsafe
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    int x, y;
+                    MIplImage m = digits[i].MIplImage;
+                    byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
+
+                    int width = digits[i].Width;
+                    int height = digits[i].Height;
+                    int nChan = m.nChannels; // number of channels - 3
+                    int padding = m.widthStep - m.nChannels * m.width;
+                    /*
+                    sign_coords[0] = Left-x
+                    sign_coords[1] = Top-y
+                    sign_coords[2] = Right-x
+                    sign_coords[3] = Bottom-y
+                    */
+
+                    /*
+                    //Scaling without changed aspect ratio
+                    double sign_size = Math.Sqrt((sign_coords[2] - sign_coords[0]) * (sign_coords[3] - sign_coords[1]));
+                    double digit_size = Math.Sqrt(width * height);
+                    double scaleFactor = sign_size / digit_size;
+                    height = (int)Math.Round(height * scaleFactor);
+                    width = (int)Math.Round(width * scaleFactor);
+                    */
+
+                    //Scaling with changed aspect ratio
+                    width = sign_coords[2] - sign_coords[0];
+                    height = sign_coords[3] - sign_coords[1];
+
+                    //Creating new image with scaled dimensions
+                    Image<Bgr, byte> resizedImage = digits[i].Resize(width, height, Emgu.CV.CvEnum.INTER.CV_INTER_LINEAR);
+
+                    //Save resized image
+                    digits[i] = resizedImage;
+
+                    //Thresholding
+                    ImageClass.ConvertToBW_Otsu(digits[i]);
+
+                }
+                return digits;
+            }
+        }
+
+        public static int DetectDigit(Image<Bgr, byte> img, List<Image<Bgr, Byte>> digits, int[] sign_coords)
         {
             unsafe
             {
@@ -475,39 +524,164 @@ namespace SS_OpenCV
                 MIplImage m = img.MIplImage;
                 byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
 
-                MIplImage m2 = imgCopy.MIplImage;
-                byte* dataPtr2 = (byte*)m2.imageData.ToPointer(); // Pointer to the image
-
-                int width = img.Width;
-                int height = img.Height;
+                int width = sign_coords[2] - sign_coords[0];
+                int height = sign_coords[3] - sign_coords[1];
                 int nChan = m.nChannels; // number of channels - 3
                 int padding = m.widthStep - m.nChannels * m.width;
-                // acesso directo : mais lento 
-                for (y = 0; y < height; y++)
-                {
-                    for (x = 0; x < width; x++)
-                    {
-                        // get pixel address
-                        //blue = (byte)(dataPtr + y * widthstep + x * nC)[0];
-                        var x0 = (int)Math.Round(x / scaleFactor);
-                        var y0 = (int)Math.Round(y / scaleFactor);
+                int[] digits_similarity = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                int maximum_similarity = 0;
+                int index_max_similarity = -1;
+                ConvertToBW_Otsu_coords(img, sign_coords);
 
-                        if (x0 >= 0 && y0 >= 0 && x0 < width && y0 < height)
+                for (int i = 0; i < 10; i++)
+                {
+                    MIplImage m2 = digits[i].MIplImage;
+                    byte* dataPtr2 = (byte*)m2.imageData.ToPointer(); // Pointer to the image
+
+                    for (y = 0; y < height; y++)
+                    {
+                        for (x = 0; x < width; x++)
                         {
-                            // get pixel address
-                            (dataPtr + y * m.widthStep + x * nChan)[0] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[0];
-                            (dataPtr + y * m.widthStep + x * nChan)[1] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[1];
-                            (dataPtr + y * m.widthStep + x * nChan)[2] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[2];
+                            if ((dataPtr + (y + sign_coords[1]) * m.widthStep + (x + sign_coords[0]) * nChan)[0] == (dataPtr2 + y * m2.widthStep + x * nChan)[0])
+                            {
+                                digits_similarity[i]++;
+                            }
+                        }
+                    }
+                    if (digits_similarity[i] > maximum_similarity)
+                    {
+                        index_max_similarity = i;
+                        maximum_similarity = digits_similarity[i];
+                    }
+                }
+                //Console.Out.WriteLine(index_max_similarity);
+                //Console.Out.WriteLine(digits_similarity);
+                return index_max_similarity;
+            }
+        }
+
+        public static void ConvertToBW_coords(Image<Bgr, byte> img, int threshold, int[] sign_coords)
+        {
+            unsafe
+            {
+                int x, y;
+                MIplImage m = img.MIplImage;
+                byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
+
+                int nChan = m.nChannels; // number of channels - 3
+
+                //MAIN MEAN
+                for (y = sign_coords[1]; y <= sign_coords[3]; y++)
+                {
+                    for (x = sign_coords[0]; x < sign_coords[2]; x++)
+                    {
+                        int blue = (dataPtr + y * m.widthStep + x * nChan)[0];
+                        int green = (dataPtr + y * m.widthStep + x * nChan)[1];
+                        int red = (dataPtr + y * m.widthStep + x * nChan)[2];
+                        int ave = (byte)Math.Round((blue + green + red) / 3.0);
+
+                        if (ave <= threshold)
+                        {
+                            for (int i = 0; i < 3; i++)
+                                (dataPtr + y * m.widthStep + x * nChan)[i] = 0;
                         }
                         else
                         {
-                            (dataPtr + y * m.widthStep + x * nChan)[0] = 0;
-                            (dataPtr + y * m.widthStep + x * nChan)[1] = 0;
-                            (dataPtr + y * m.widthStep + x * nChan)[2] = 0;
+                            for (int i = 0; i < 3; i++)
+                                (dataPtr + y * m.widthStep + x * nChan)[i] = 255;
                         }
                     }
                 }
             }
         }
+
+        public static void ConvertToBW_Otsu_coords(Image<Bgr, byte> img, int[] sign_coords)
+        {
+            unsafe
+            {
+                int x, y;
+                MIplImage m = img.MIplImage;
+                byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
+
+                int width = sign_coords[2] - sign_coords[0];
+                int height = sign_coords[3] - sign_coords[1];
+                int nChan = m.nChannels; // number of channels - 3
+                int[] histogram = new int[256];
+                int threshold = 0;
+
+                double weight_bg = 0.0;
+                double mean_bg = 0.0;
+                double variance_bg = 0.0;
+                double weight_fg = 0.0;
+                double mean_fg = 0.0;
+                double variance_fg = 0.0;
+                int hist_elements = 0;
+                double class_variance = double.MaxValue;
+                for (y = sign_coords[1]; y < sign_coords[3]; y++)
+                {
+                    for (x = sign_coords[0]; x < sign_coords[2]; x++)
+                    {
+                        int blue = (dataPtr + y * m.widthStep + x * nChan)[0];
+                        int green = (dataPtr + y * m.widthStep + x * nChan)[1];
+                        int red = (dataPtr + y * m.widthStep + x * nChan)[2];
+                        int ave = (byte)Math.Round((blue + green + red) / 3.0);
+                        histogram[ave] += 1;
+                    }
+                }
+
+                for (int current_threshold = 1; current_threshold < 255; current_threshold++)
+                {
+                    hist_elements = 0;
+                    weight_bg = 0.0;
+                    mean_bg = 0.0;
+                    variance_bg = 0.0;
+                    weight_fg = 0.0;
+                    mean_fg = 0.0;
+                    variance_fg = 0.0;
+                    double current_class_variance = 0.0;
+
+                    //background
+                    for (int i = 0; i < current_threshold; i++)
+                    {
+                        weight_bg += histogram[i];
+                        mean_bg += i * histogram[i];
+                        hist_elements += histogram[i];
+                    }
+                    weight_bg /= width * height;
+                    mean_bg /= hist_elements;
+                    for (int i = 0; i < current_threshold; i++)
+                    {
+                        variance_bg += Math.Pow((i - mean_bg), 2) * histogram[i];
+                    }
+                    variance_bg /= hist_elements;
+                    hist_elements = 0;
+
+                    //foreground
+                    for (int i = current_threshold + 1; i < 256; i++)
+                    {
+                        weight_fg += histogram[i];
+                        mean_fg += i * histogram[i];
+                        hist_elements += histogram[i];
+                    }
+                    weight_fg /= width * height;
+                    mean_fg /= hist_elements;
+                    for (int i = current_threshold + 1; i < 256; i++)
+                    {
+                        variance_fg += Math.Pow((i - mean_fg), 2) * histogram[i];
+                    }
+                    variance_fg /= hist_elements;
+
+                    //result and compare
+                    current_class_variance = weight_bg * variance_bg + weight_fg * variance_fg;
+                    if (current_class_variance < class_variance)
+                    {
+                        class_variance = current_class_variance;
+                        threshold = current_threshold;
+                    }
+                }
+                ConvertToBW_coords(img, threshold, sign_coords);
+            }
+        }
+
     }
 }
