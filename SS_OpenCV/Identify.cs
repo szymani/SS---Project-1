@@ -581,7 +581,7 @@ namespace SS_OpenCV
             }
         }
 
-        public static int DetectDigit(Image<Bgr, byte> img, List<Image<Bgr, Byte>> digits, int[] sign_coords)
+        public static int DetectDigit(Image<Bgr, byte> img, List<Image<Bgr, Byte>> digits, int[] sign_coords, double tolerance = 0.8)
         {
             unsafe
             {
@@ -597,6 +597,7 @@ namespace SS_OpenCV
                 int[] digits_similarity = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
                 int maximum_similarity = 0;
                 int index_max_similarity = -1;
+                double similarity_factor;
                 ConvertToBW_Otsu_coords(img, sign_coords);
 
                 for (int i = 0; i < 10; i++)
@@ -622,7 +623,11 @@ namespace SS_OpenCV
                 }
                 //Console.Out.WriteLine(index_max_similarity);
                 //Console.Out.WriteLine(digits_similarity);
-                return index_max_similarity;
+                similarity_factor = (double)maximum_similarity / area;
+                if (similarity_factor > tolerance)
+                    return index_max_similarity;
+                else
+                    return -1;
             }
         }
 
@@ -758,13 +763,12 @@ namespace SS_OpenCV
                 string sign_value = "";
                 int index = 0;
 
-
                 //Sorting digits founded inside sign
                 foreach (int classifier in classification)
                 {
                     if (classifier >= 0)
                     {
-                        foundedDigits.Add(new int[] { classifier, numberObjects[index][0], numberObjects[index][1] });
+                        foundedDigits.Add(new int[] { classifier, numberObjects[index][0], numberObjects[index][1], numberObjects[index][2], numberObjects[index][3] });
                     }
                     index += 1;
                 }
@@ -781,8 +785,8 @@ namespace SS_OpenCV
                 {
                     string[] dummy_vector = new string[5];
 
-                    //Checking digits position in order to sign position - if digit is close then sign is speed limit type
-                    if (Math.Abs(foundedDigits[0][1] - sign[0]) < 100 && Math.Abs(foundedDigits[0][2] - sign[1]) < 100)
+                    //Checking digits position in order to sign position - if digit is inside sign then sign is speed limit type
+                    if (sign[0] - foundedDigits[0][1] < 0 && sign[1] - foundedDigits[0][2] < 0 && sign[2] - foundedDigits[0][3] > 0 && sign[3] - foundedDigits[0][4] > 0)
                         dummy_vector[0] = sign_value;   // Speed limit
                     else
                         dummy_vector[0] = "-1";     // Another sign
