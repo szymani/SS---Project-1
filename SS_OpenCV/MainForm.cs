@@ -496,22 +496,38 @@ namespace SS_OpenCV
             if (img == null) // verify if the image is already opened
                 return;
             Cursor = Cursors.WaitCursor; // clock cursor 
+            int[] coords1 = new int[] { 1120, 305, 1174, 388 };
+            int[] coords2 = new int[] { 1188, 301, 1252, 388 };
+            List<int[]> coords = new List<int[]>{coords1, coords2};
+            //int[][] coords = new int[][] {coords1, coords2};
+
+            /*List of detected digits - one detected object is written as int array[left_coordinate, detected_digit]
+              left_coordinate needed for determine digits order
+              detected_digit is setted after call function
+            */
+            List<int[]> detected_digits = new List<int[]> {new int[] {coords1[0], -1}, new int[] {coords2[0], -1} };
 
             //HSV image inside imgUndo, you can change imgUndo to imgHsv to get different result (also Bgr to Hsv change needed in BgrToHsv func)
-            //Identify.BgrToHsv(img, imgUndo);
+            Identify.BgrToHsv(img, imgUndo);
 
             //Drawing rectangle
             //Identify.DrawRectangle(img, new int[]{200, 300, 400, 500});
 
-            //Scale digits image
-            digits = Identify.Scale(digits, new int[] { 1120, 305, 1174, 388 });
+            for (int i = 0; i < coords.Count; i++)
+            {
+                //Scale digits image
+                digits = Identify.Scale(digits, coords[i]);
 
-            //Thresholding detected sector
-            //Identify.ConvertToBW_Otsu_coords(img, new int[] { 1120, 305, 1174, 388 });
-            Identify.ConvertToBW_Otsu_coords(img, new int[] { 1120, 305, 1174, 388 });
+                //Thresholding detected sector
+                Identify.ConvertToBW_Otsu_coords(img, coords[i]);
 
-            //Identify digit
-            Identify.DetectDigit(img, digits, new int[] { 1120, 305, 1174, 388 });
+                //Identify digit
+                detected_digits[i][0] = coords[i][0]; //saving left_coordinate 
+                detected_digits[i][1] = Identify.DetectDigit(img, digits, coords[i]); //saving detected digit
+            }
+            
+            
+            //Console.Out.WriteLine(detected_digits);
 
             //ImageViewer.Image = digits[9].Bitmap;
             //ImageViewer.Image = imgHsv.Bitmap;

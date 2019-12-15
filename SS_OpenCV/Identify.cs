@@ -33,7 +33,7 @@ namespace SS_OpenCV
 
     class Identify
     {
-        public static void BgrToHsv(Image<Bgr, byte> img, Image<Hsv, byte> imgCopy)
+        public static void BgrToHsv(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy)
         {
             unsafe
             {
