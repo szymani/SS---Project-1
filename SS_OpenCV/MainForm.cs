@@ -510,10 +510,11 @@ namespace SS_OpenCV
             
             //HSV image inside imgUndo, you can change imgUndo to imgHsv to get different result (also Bgr to Hsv change needed in BgrToHsv func)
             Identify.BgrToHsv(img, imgUndo);
+            List<List<int[]>> allObject = Identify.connectedComponents(imgUndo, img);
+            List<int[]> signsObjects = allObject[0];
+            List<int[]> numberObjects = allObject[1];
 
-            List<int[]> numberObjects = Identify.connectedComponents(imgUndo, img);
-            
-            foreach(int[] number in numberObjects)
+            foreach (int[] number in numberObjects)
             {
                 //Scale digits image
                 digits = Identify.Scale(digits, number);
@@ -525,10 +526,10 @@ namespace SS_OpenCV
                 classification.Add(Identify.DetectDigit(imgOriginal, digits, number));
             }
 
-            signs = Identify.CreateFinalList(classification, numberObjects);
+            signs = Identify.CreateFinalList(classification, signsObjects, numberObjects);
 
             //ImageViewer.Image = imgHsv.Bitmap;
-            ImageViewer.Image = imgOriginal.Bitmap;
+            ImageViewer.Image = img.Bitmap;
 
             ImageViewer.Refresh(); // refresh image on the screen
             Cursor = Cursors.Default; // normal cursor
