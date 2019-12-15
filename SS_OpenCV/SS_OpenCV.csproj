@@ -103,6 +103,7 @@
     <Compile Include="Form2.Designer.cs">
       <DependentUpon>Form2.cs</DependentUpon>
     </Compile>
+    <Compile Include="Identify.cs" />
     <Compile Include="ImageClass.cs" />
     <Compile Include="InputBox.cs">
       <SubType>Form</SubType>
