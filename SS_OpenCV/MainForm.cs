@@ -13,10 +13,21 @@ namespace SS_OpenCV
         //bool haveOpenClGpu = CvInvoke.HaveOpenCLCompatibleGpuDevice;
 
         //CvInvoke.UseOpenCL = true;
-        
+
         Image<Bgr, Byte> img = null; // working image
         Image<Bgr, Byte> imgUndo = null; // undo backup image - UNDO
-        Image<Hsv, Byte> imgHsv = null; // undo backup image - UNDO
+        Image<Hsv, Byte> imgHsv = null; // hsv image
+        Image<Bgr, Byte> digit0 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\0.png");
+        Image<Bgr, Byte> digit1 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\1.png");
+        Image<Bgr, Byte> digit2 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\2.png");
+        Image<Bgr, Byte> digit3 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\3.png");
+        Image<Bgr, Byte> digit4 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\4.png");
+        Image<Bgr, Byte> digit5 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\5.png");
+        Image<Bgr, Byte> digit6 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\6.png");
+        Image<Bgr, Byte> digit7 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\7.png");
+        Image<Bgr, Byte> digit8 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\8.png");
+        Image<Bgr, Byte> digit9 = new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\9.png");
+        List<Image<Bgr, Byte>> digits = new List<Image<Bgr, Byte>>();
 
         string title_bak = "";
 
@@ -37,6 +48,16 @@ namespace SS_OpenCV
             {
                 img = new Image<Bgr, byte>(openFileDialog1.FileName);
                 imgHsv = new Image<Hsv, byte>(openFileDialog1.FileName);
+                digits.Add(digit0);
+                digits.Add(digit1);
+                digits.Add(digit2);
+                digits.Add(digit3);
+                digits.Add(digit4);
+                digits.Add(digit5);
+                digits.Add(digit6);
+                digits.Add(digit7);
+                digits.Add(digit8);
+                digits.Add(digit9);
                 Text = title_bak + " [" +
                         openFileDialog1.FileName.Substring(openFileDialog1.FileName.LastIndexOf("\\") + 1) +
                         "]";
@@ -44,6 +65,7 @@ namespace SS_OpenCV
 
                 ImageViewer.Image = img.Bitmap;
                 ImageViewer.Refresh();
+
             }
         }
 
@@ -475,17 +497,27 @@ namespace SS_OpenCV
                 return;
             Cursor = Cursors.WaitCursor; // clock cursor 
 
-            //HSV image inside imgUndo
-            Identify.BgrToHsv(img, imgHsv);
+            //copy Undo Image
+            imgUndo = img.Copy();
 
-            List<int[]> signsCoor = Identify.connectedComponents(imgHsv, img);
+            //HSV image inside imgUndo, you can change imgUndo to imgHsv to get different result (also Bgr to Hsv change needed in BgrToHsv func)
+            Identify.BgrToHsv(img, imgUndo);
 
-            //Drawing rectangle
-            Identify.DrawRectangles(img, signsCoor);
-            
-            ImageViewer.Image = img.Bitmap;
+            List<int[]> numberObjects = Identify.connectedComponents(imgUndo, img);
 
+            //Scale digits image
+            digits = Identify.Scale(digits, new int[] { 1120, 305, 1174, 388 });
+
+            //Thresholding detected sector
+            //Identify.ConvertToBW_Otsu_coords(img, new int[] { 1120, 305, 1174, 388 });
+            Identify.ConvertToBW_Otsu_coords(img, new int[] { 1120, 305, 1174, 388 });
+
+            //Identify digit
+            Identify.DetectDigit(img, digits, new int[] { 1120, 305, 1174, 388 });
+
+            //ImageViewer.Image = digits[9].Bitmap;
             //ImageViewer.Image = imgHsv.Bitmap;
+            ImageViewer.Image = img.Bitmap;
 
             ImageViewer.Refresh(); // refresh image on the screen
             Cursor = Cursors.Default; // normal cursor
