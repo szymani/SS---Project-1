@@ -5,7 +5,6 @@ using Emgu.CV.Structure;
 using Emgu.CV;
 using System.Linq;
 
-
 namespace SS_OpenCV
 {
     struct Coords
@@ -33,7 +32,7 @@ namespace SS_OpenCV
 
     class Identify
     {
-        public static void BgrToHsv(Image<Bgr, byte> img, Image<Hsv, byte> imgCopy)
+        public static void BgrToHsv(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy)
         {
             unsafe
             {
@@ -142,6 +141,7 @@ namespace SS_OpenCV
                 }
             }
         }
+
         public static void connectedComponents(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy, int hueLimit  =  20, int satLimit  =  50, int valLimit =  50)
         {
             unsafe
@@ -304,46 +304,42 @@ namespace SS_OpenCV
                 }
             }
         }
-        public static void Scale(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy, float scaleFactor)
+
+        public static List<Image<Bgr, Byte>> Scale(List<Image<Bgr, Byte>> digits, int[] sign_coords)
         {
             unsafe
             {
-                int x, y;
-                MIplImage m = img.MIplImage;
-                byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
-
-                MIplImage m2 = imgCopy.MIplImage;
-                byte* dataPtr2 = (byte*)m2.imageData.ToPointer(); // Pointer to the image
-
-                int width = img.Width;
-                int height = img.Height;
-                int nChan = m.nChannels; // number of channels - 3
-                int padding = m.widthStep - m.nChannels * m.width;
-                // acesso directo : mais lento 
-                for (y = 0; y < height; y++)
+                for (int i=0; i<10; i++)
                 {
-                    for (x = 0; x < width; x++)
-                    {
-                        // get pixel address
-                        //blue = (byte)(dataPtr + y * widthstep + x * nC)[0];
-                        var x0 = (int)Math.Round(x / scaleFactor);
-                        var y0 = (int)Math.Round(y / scaleFactor);
+                    int x, y;
+                    MIplImage m = digits[i].MIplImage;
+                    byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
 
-                        if (x0 >= 0 && y0 >= 0 && x0 < width && y0 < height)
-                        {
-                            // get pixel address
-                            (dataPtr + y * m.widthStep + x * nChan)[0] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[0];
-                            (dataPtr + y * m.widthStep + x * nChan)[1] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[1];
-                            (dataPtr + y * m.widthStep + x * nChan)[2] = (dataPtr2 + y0 * m.widthStep + x0 * nChan)[2];
-                        }
-                        else
-                        {
-                            (dataPtr + y * m.widthStep + x * nChan)[0] = 0;
-                            (dataPtr + y * m.widthStep + x * nChan)[1] = 0;
-                            (dataPtr + y * m.widthStep + x * nChan)[2] = 0;
-                        }
-                    }
+                    int width = digits[i].Width;
+                    int height = digits[i].Height;
+                    int nChan = m.nChannels; // number of channels - 3
+                    int padding = m.widthStep - m.nChannels * m.width;
+                    /*
+                    sign_coords[0] = Left-x
+                    sign_coords[1] = Top-y
+                    sign_coords[2] = Right-x
+                    sign_coords[3] = Bottom-y
+                    */
+                    double sign_size = Math.Sqrt((sign_coords[2] - sign_coords[0]) * (sign_coords[3] - sign_coords[1]));
+                    double digit_size = Math.Sqrt(width * height);
+                    double scaleFactor = sign_size / digit_size;
+
+                    Console.Out.WriteLine(scaleFactor);
+
+                    height = (int)Math.Round(height * scaleFactor);
+                    width = (int)Math.Round(width * scaleFactor);
+
+                    Image<Bgr, byte> resizedImage = digits[i].Resize(width, height, Emgu.CV.CvEnum.INTER.CV_INTER_LINEAR);
+
+                    digits[i] = resizedImage;
+  
                 }
+                return digits;
             }
         }
     }
