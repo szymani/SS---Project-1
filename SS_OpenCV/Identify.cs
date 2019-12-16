@@ -529,7 +529,7 @@ namespace SS_OpenCV
                 Identify.DrawRectangles(img, resultBlack, 1);
                 Identify.DrawRectangles(img, newBlack, 2);
 
-                return new List<List<int[]>> { result, resultBlack };
+                return new List<List<int[]>> { result, newBlack };
             }
         }
 
