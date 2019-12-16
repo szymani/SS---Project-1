@@ -759,46 +759,51 @@ namespace SS_OpenCV
             unsafe
             {
                 List<string[]> signs = new List<string[]>();
-                List<int[]> foundedDigits = new List<int[]>();
-                string sign_value = "";
-                int index = 0;
-
-                //Sorting digits founded inside sign
-                foreach (int classifier in classification)
+                if (signsObjects.Count() > 0)
                 {
-                    if (classifier >= 0)
+                    List<int[]> foundedDigits = new List<int[]>();
+                    string sign_value = "";
+                    int index = 0;
+
+                    //Sorting digits founded inside sign
+                    foreach (int classifier in classification)
                     {
-                        foundedDigits.Add(new int[] { classifier, numberObjects[index][0], numberObjects[index][1], numberObjects[index][2], numberObjects[index][3] });
+                        if (classifier >= 0)
+                        {
+                            foundedDigits.Add(new int[] { classifier, numberObjects[index][0], numberObjects[index][1], numberObjects[index][2], numberObjects[index][3] });
+                        }
+                        index += 1;
                     }
-                    index += 1;
-                }
 
-                //Merging sorted digits as one number
-                foundedDigits = foundedDigits.OrderBy(x => x[1]).ToList();
-                foreach (int[] number in foundedDigits)
-                {
-                    sign_value += number[0].ToString();
-                }
+                    //Merging sorted digits as one number
+                    foundedDigits = foundedDigits.OrderBy(x => x[1]).ToList();
+                    foreach (int[] number in foundedDigits)
+                    {
+                        sign_value += number[0].ToString();
+                    }
 
-                //Adding founded signs to list
-                foreach (int[] sign in signsObjects)
-                {
-                    string[] dummy_vector = new string[5];
+                    //Adding founded signs to list
+                    foreach (int[] sign in signsObjects)
+                    {
+                        string[] dummy_vector = new string[5];
 
-                    //Checking digits position in order to sign position - if digit is inside sign then sign is speed limit type
-                    if (sign[0] - foundedDigits[0][1] < 0 && sign[1] - foundedDigits[0][2] < 0 && sign[2] - foundedDigits[0][3] > 0 && sign[3] - foundedDigits[0][4] > 0)
-                        dummy_vector[0] = sign_value;   // Speed limit
-                    else
-                        dummy_vector[0] = "-1";     // Another sign
+                        //Checking digits position in order to sign position - if digit is inside sign then sign is speed limit type
+                        if (sign[0] - foundedDigits[0][1] < 0 && sign[1] - foundedDigits[0][2] < 0 && sign[2] - foundedDigits[0][3] > 0 && sign[3] - foundedDigits[0][4] > 0)
+                            dummy_vector[0] = sign_value;   // Speed limit
+                        else
+                            dummy_vector[0] = "-1";     // Another sign
 
-                    dummy_vector[1] = sign[0].ToString(); // Left-x
-                    dummy_vector[2] = sign[1].ToString();  // Top-y
-                    dummy_vector[3] = sign[2].ToString(); // Right-x
-                    dummy_vector[4] = sign[3].ToString();  // Bottom-y
-                    signs.Add(dummy_vector);
+                        dummy_vector[1] = sign[0].ToString(); // Left-x
+                        dummy_vector[2] = sign[1].ToString();  // Top-y
+                        dummy_vector[3] = sign[2].ToString(); // Right-x
+                        dummy_vector[4] = sign[3].ToString();  // Bottom-y
+                        signs.Add(dummy_vector);
+                    }
                 }
                 return signs;
+
             }
+
         }
 
     }

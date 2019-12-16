@@ -507,6 +507,11 @@ namespace SS_OpenCV
 
             //Classification results (list for each object)
             List<int> classification = new List<int>();
+
+            //List for evaluation
+            List<string[]> limitSign = new List<string[]>();
+            List<string[]> warningSign = new List<string[]>();
+            List<string[]> prohibitionSign = new List<string[]>();
             
             //HSV image inside imgUndo, you can change imgUndo to imgHsv to get different result (also Bgr to Hsv change needed in BgrToHsv func)
             Identify.BgrToHsv(img, imgUndo);
@@ -529,8 +534,23 @@ namespace SS_OpenCV
             //Creating final output of detected signs
             signs = Identify.CreateFinalList(classification, signsObjects, numberObjects);
 
+            foreach(string[] sign in signs)
+            {
+                if (sign[0].Equals("-1"))
+                {
+                    warningSign.Add(sign);
+                }
+                else
+                {
+                    limitSign.Add(sign);
+                }
+            }
+
+            ImageClass.Signs(img, imgUndo, out limitSign, out warningSign, out prohibitionSign, 2);
             //ImageViewer.Image = imgHsv.Bitmap;
             ImageViewer.Image = img.Bitmap;
+
+            
 
             ImageViewer.Refresh(); // refresh image on the screen
             Cursor = Cursors.Default; // normal cursor

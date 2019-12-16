@@ -1138,6 +1138,17 @@ namespace SS_OpenCV
                 return histArray;
             }
         }
+
+        public static Image<Bgr, byte> Signs(Image<Bgr, byte> img, Image<Bgr, byte> imgCopy, out List<string[]> limitSign, out List<string[]> warningSign, out List<string[]> prohibitionSign, int level)
+        {
+            limitSign = new List<string[]>();
+            warningSign = new List<string[]>();
+            prohibitionSign = new List<string[]>();
+            
+
+            return img;
+        }
+
     }
 }
 
