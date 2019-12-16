@@ -502,6 +502,12 @@ namespace SS_OpenCV
             imgUndo = img.Copy();
             imgOriginal = img.Copy();
 
+            List<Image<Bgr, Byte>> triangles = new List<Image<Bgr, Byte>>();
+            for (int i = 0; i < 9; i++)
+            {
+                triangles.Add(new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\signs\\" + i + ".png"));
+            }
+
             //List of detected signs
             List<string[]> signs = new List<string[]>();
 
@@ -524,6 +530,8 @@ namespace SS_OpenCV
                 //Scale digits image
                 digits = Identify.Scale(digits, number);
 
+                triangles = Identify.Scale(triangles, number);
+
                 //Thresholding detected sector
                 Identify.ConvertToBW_Otsu_coords(imgOriginal, number);
 
@@ -534,11 +542,14 @@ namespace SS_OpenCV
             //Creating final output of detected signs
             //signs = Identify.CreateFinalList(classification, signsObjects, numberObjects);
 
-            foreach(string[] sign in signs)
+            foreach (string[] sign in signs)
             {
                 if (sign[0].Equals("-1"))
                 {
-                    warningSign.Add(sign);
+                    if (!Identify.DetectTriangle(img, triangles, new int[] { Int32.Parse(sign[1]), Int32.Parse(sign[2]), Int32.Parse(sign[3]), Int32.Parse(sign[4]) }, 0.7).Equals(-1))
+                        warningSign.Add(sign);
+                    else
+                        prohibitionSign.Add(sign);
                 }
                 else
                 {
@@ -550,11 +561,8 @@ namespace SS_OpenCV
             //ImageViewer.Image = imgHsv.Bitmap;
             ImageViewer.Image = img.Bitmap;
 
-            
-
             ImageViewer.Refresh(); // refresh image on the screen
             Cursor = Cursors.Default; // normal cursor
         }
-
     }
 }

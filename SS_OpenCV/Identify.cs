@@ -527,7 +527,7 @@ namespace SS_OpenCV
                 //Drawing rectangle
                 Identify.DrawRectangles(img, result);
                 //Identify.DrawRectangles(img, resultBlack, 1);
-                //Identify.DrawRectangles(img, newBlack, 2);
+                Identify.DrawRectangles(img, newBlack, 2);
 
                 return new List<List<int[]>> { result, newBlack };
             }
@@ -537,7 +537,7 @@ namespace SS_OpenCV
         {
             unsafe
             {
-                for (int i = 0; i < 10; i++)
+                for (int i = 0; i < digits.Count(); i++)
                 {
                     int x, y;
                     MIplImage m = digits[i].MIplImage;
@@ -585,8 +585,9 @@ namespace SS_OpenCV
         {
             unsafe
             {
+                Image<Bgr, Byte> imgCopy = img.Copy(); // undo backup image - UNDO
                 int x, y;
-                MIplImage m = img.MIplImage;
+                MIplImage m = imgCopy.MIplImage;
                 byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
 
                 int width = sign_coords[2] - sign_coords[0];
@@ -598,7 +599,7 @@ namespace SS_OpenCV
                 int maximum_similarity = 0;
                 int index_max_similarity = -1;
                 double similarity_factor;
-                ConvertToBW_Otsu_coords(img, sign_coords);
+                ConvertToBW_Otsu_coords(imgCopy, sign_coords);
 
                 for (int i = 0; i < 10; i++)
                 {
@@ -636,7 +637,10 @@ namespace SS_OpenCV
             unsafe
             {
                 int x, y;
-                MIplImage m = img.MIplImage;
+
+                Image<Bgr, Byte> imgCopy = img.Copy(); // undo backup image - UNDO
+                BgrToHsv(img, imgCopy);
+                MIplImage m = imgCopy.MIplImage;
                 byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
 
                 int width = sign_coords[2] - sign_coords[0];
@@ -648,8 +652,16 @@ namespace SS_OpenCV
                 int maximum_similarity = 0;
                 int index_max_similarity = -1;
                 double similarity_factor;
-                ConvertToBW_Otsu_coords(img, sign_coords);
 
+
+                int hueLimit = 60;
+                int satLimit = 50;
+                int valLimit = 30;
+
+                int hue = 0;
+                int value = 0;
+                int saturation = 0;
+                      
                 for (int i = 0; i < digits.Count(); i++)
                 {
                     MIplImage m2 = digits[i].MIplImage;
@@ -659,9 +671,20 @@ namespace SS_OpenCV
                     {
                         for (x = 0; x < width; x++)
                         {
-                            if ((dataPtr + (y + sign_coords[1]) * m.widthStep + (x + sign_coords[0]) * nChan)[0] == (dataPtr2 + y * m2.widthStep + x * nChan)[0])
+                            value = ((dataPtr2 + y * m.widthStep + x * nChan)[0] * 100) / 255;
+                            saturation = ((dataPtr2 + y * m.widthStep + x * nChan)[1] * 100) / 255;
+                            hue = ((dataPtr2 + y * m.widthStep + x * nChan)[2] * 360) / 255;
+
+                            if (((hue >= 0 && hue <= hueLimit) || (hue >= 360 - hueLimit && hue <= 360)) && (saturation <= 100 && saturation > satLimit) && (value <= 100 && value > valLimit))
                             {
-                                digits_similarity[i]++;
+                                value = ((dataPtr + y * m.widthStep + x * nChan)[0] * 100) / 255;
+                                saturation = ((dataPtr + y * m.widthStep + x * nChan)[1] * 100) / 255;
+                                hue = ((dataPtr + y * m.widthStep + x * nChan)[2] * 360) / 255;
+
+                                if (((hue >= 0 && hue <= hueLimit) || (hue >= 360 - hueLimit && hue <= 360)) && (saturation <= 100 && saturation > satLimit) && (value <= 100 && value > valLimit))
+                                {
+                                    digits_similarity[i] += 1;
+                                }
                             }
                         }
                     }
@@ -809,7 +832,7 @@ namespace SS_OpenCV
             unsafe
             {
                 List<string[]> signs = new List<string[]>();
-                if (signsObjects.Count() > 0)
+                if (!signsObjects.Count().Equals(0))
                 {
                     List<int[]> foundedDigits = new List<int[]>();
                     string sign_value = "";
@@ -838,17 +861,19 @@ namespace SS_OpenCV
                         string[] dummy_vector = new string[5];
 
                         //Checking digits position in order to sign position - if digit is inside sign then sign is speed limit type
-                        if (sign[0] - foundedDigits[0][1] < 0 && sign[1] - foundedDigits[0][2] < 0 && sign[2] - foundedDigits[0][3] > 0 && sign[3] - foundedDigits[0][4] > 0)
+                        if ((!foundedDigits.Count().Equals(0)) && (sign[0] - foundedDigits[0][1] < 0 && sign[1] - foundedDigits[0][2] < 0 && sign[2] - foundedDigits[0][3] > 0 && sign[3] - foundedDigits[0][4] > 0))
                             dummy_vector[0] = sign_value;   // Speed limit
                         else
                             dummy_vector[0] = "-1";     // Another sign
-
+                        
+                            
                         dummy_vector[1] = sign[0].ToString(); // Left-x
                         dummy_vector[2] = sign[1].ToString();  // Top-y
                         dummy_vector[3] = sign[2].ToString(); // Right-x
                         dummy_vector[4] = sign[3].ToString();  // Bottom-y
                         signs.Add(dummy_vector);
                     }
+                    
                 }
                 return signs;
 

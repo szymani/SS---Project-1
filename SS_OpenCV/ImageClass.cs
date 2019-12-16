@@ -1156,7 +1156,7 @@ namespace SS_OpenCV
                 digits.Add(new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\" + i + ".png"));
             }
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 9; i++)
             {
                 triangles.Add(new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\signs\\" + i + ".png"));
             }
@@ -1185,6 +1185,8 @@ namespace SS_OpenCV
                 //Scale digits image
                 digits = Identify.Scale(digits, number);
 
+                triangles = Identify.Scale(triangles, number);
+
                 //Thresholding detected sector
                 Identify.ConvertToBW_Otsu_coords(imgOriginal, number);
 
@@ -1209,8 +1211,6 @@ namespace SS_OpenCV
                     limitSign.Add(sign);
                 }
             }
-
-
 
             return img;
         }
