@@ -1144,7 +1144,73 @@ namespace SS_OpenCV
             limitSign = new List<string[]>();
             warningSign = new List<string[]>();
             prohibitionSign = new List<string[]>();
-            
+
+            Image<Bgr, Byte> imgUndo = null; // undo backup image - UNDO
+            Image<Bgr, Byte> imgOriginal = null; //never changed
+            Image<Hsv, Byte> imgHsv = null; // hsv image
+            List<Image<Bgr, Byte>> digits = new List<Image<Bgr, Byte>>();
+            List<Image<Bgr, Byte>> triangles = new List<Image<Bgr, Byte>>();
+
+            for(int i = 0; i<10;i++)
+            {
+                digits.Add(new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\digits\\" + i + ".png"));
+            }
+
+            for (int i = 0; i < 10; i++)
+            {
+                triangles.Add(new Image<Bgr, Byte>("..\\..\\Imagens-20190916\\signs\\" + i + ".png"));
+            }
+
+
+            //copy Undo Image
+            imgUndo = img.Copy();
+            imgOriginal = img.Copy();
+
+            //List of detected signs
+            List<string[]> signs = new List<string[]>();
+
+            //Classification results (list for each object)
+            List<int> classification = new List<int>();
+
+
+
+            //HSV image inside imgUndo, you can change imgUndo to imgHsv to get different result (also Bgr to Hsv change needed in BgrToHsv func)
+            Identify.BgrToHsv(img, imgUndo);
+            List<List<int[]>> allObject = Identify.connectedComponents(imgUndo, img);
+            List<int[]> signsObjects = allObject[0];
+            List<int[]> numberObjects = allObject[1];
+
+            foreach (int[] number in numberObjects)
+            {
+                //Scale digits image
+                digits = Identify.Scale(digits, number);
+
+                //Thresholding detected sector
+                Identify.ConvertToBW_Otsu_coords(imgOriginal, number);
+
+                //Identify digit
+                classification.Add(Identify.DetectDigit(imgOriginal, digits, number));
+            }
+
+            //Creating final output of detected signs
+            signs = Identify.CreateFinalList(classification, signsObjects, numberObjects);
+
+            foreach (string[] sign in signs)
+            {
+                if (sign[0].Equals("-1"))
+                {
+                    if (!Identify.DetectTriangle(img, triangles, new int[] { Int32.Parse(sign[1]), Int32.Parse(sign[2]), Int32.Parse(sign[3]), Int32.Parse(sign[4])},0.7).Equals(-1))
+                        warningSign.Add(sign);
+                    else
+                        prohibitionSign.Add(sign);
+                }
+                else
+                {
+                    limitSign.Add(sign);
+                }
+            }
+
+
 
             return img;
         }

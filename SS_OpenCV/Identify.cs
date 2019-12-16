@@ -526,8 +526,8 @@ namespace SS_OpenCV
 
                 //Drawing rectangle
                 Identify.DrawRectangles(img, result);
-                Identify.DrawRectangles(img, resultBlack, 1);
-                Identify.DrawRectangles(img, newBlack, 2);
+                //Identify.DrawRectangles(img, resultBlack, 1);
+                //Identify.DrawRectangles(img, newBlack, 2);
 
                 return new List<List<int[]>> { result, newBlack };
             }
@@ -601,6 +601,56 @@ namespace SS_OpenCV
                 ConvertToBW_Otsu_coords(img, sign_coords);
 
                 for (int i = 0; i < 10; i++)
+                {
+                    MIplImage m2 = digits[i].MIplImage;
+                    byte* dataPtr2 = (byte*)m2.imageData.ToPointer(); // Pointer to the image
+
+                    for (y = 0; y < height; y++)
+                    {
+                        for (x = 0; x < width; x++)
+                        {
+                            if ((dataPtr + (y + sign_coords[1]) * m.widthStep + (x + sign_coords[0]) * nChan)[0] == (dataPtr2 + y * m2.widthStep + x * nChan)[0])
+                            {
+                                digits_similarity[i]++;
+                            }
+                        }
+                    }
+                    if (digits_similarity[i] > maximum_similarity)
+                    {
+                        index_max_similarity = i;
+                        maximum_similarity = digits_similarity[i];
+                    }
+                }
+                //Console.Out.WriteLine(index_max_similarity);
+                //Console.Out.WriteLine(digits_similarity);
+                similarity_factor = (double)maximum_similarity / area;
+                if (similarity_factor > tolerance)
+                    return index_max_similarity;
+                else
+                    return -1;
+            }
+        }
+
+        public static int DetectTriangle(Image<Bgr, byte> img, List<Image<Bgr, Byte>> digits, int[] sign_coords, double tolerance = 0.8)
+        {
+            unsafe
+            {
+                int x, y;
+                MIplImage m = img.MIplImage;
+                byte* dataPtr = (byte*)m.imageData.ToPointer(); // Pointer to the image
+
+                int width = sign_coords[2] - sign_coords[0];
+                int height = sign_coords[3] - sign_coords[1];
+                int area = width * height;
+                int nChan = m.nChannels; // number of channels - 3
+                int padding = m.widthStep - m.nChannels * m.width;
+                int[] digits_similarity = new int[digits.Count()];
+                int maximum_similarity = 0;
+                int index_max_similarity = -1;
+                double similarity_factor;
+                ConvertToBW_Otsu_coords(img, sign_coords);
+
+                for (int i = 0; i < digits.Count(); i++)
                 {
                     MIplImage m2 = digits[i].MIplImage;
                     byte* dataPtr2 = (byte*)m2.imageData.ToPointer(); // Pointer to the image
