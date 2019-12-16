@@ -527,7 +527,7 @@ namespace SS_OpenCV
             }
 
             //Creating final output of detected signs
-            signs = Identify.CreateFinalList(classification, signsObjects, numberObjects);
+            //signs = Identify.CreateFinalList(classification, signsObjects, numberObjects);
 
             //ImageViewer.Image = imgHsv.Bitmap;
             ImageViewer.Image = img.Bitmap;
