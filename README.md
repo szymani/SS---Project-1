@@ -1,1 +1,1 @@
-# SS Projec - Road signs recognition system
+# SS Project - Road signs recognition system
